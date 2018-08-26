@@ -52,6 +52,7 @@ const (
 )
 
 // Agent can register themselves with the worker
+// Agent是真正进行挖矿的对象
 type Agent interface {
 	AssignTask(*Package)
 	DeliverTo(chan<- *Package)
@@ -79,6 +80,7 @@ type Env struct {
 }
 
 // Package contains all information for consensus engine sealing and result submitting.
+// Package包含了共识引擎sealing以及result submitting所需的所有信息
 type Package struct {
 	Receipts []*types.Receipt
 	State    *state.StateDB
@@ -86,6 +88,8 @@ type Package struct {
 }
 
 // worker is the main object which takes care of applying messages to the new state
+// worker是主要的对象负责将message应用到新状态
+// worker负责构建区块
 type worker struct {
 	config *params.ChainConfig
 	engine consensus.Engine
@@ -101,7 +105,9 @@ type worker struct {
 	chainSideCh  chan core.ChainSideEvent
 	chainSideSub event.Subscription
 
+	// 所有的agent
 	agents map[Agent]struct{}
+	// 从recv中获取Package
 	recv   chan *Package
 
 	eth     Backend
@@ -109,6 +115,7 @@ type worker struct {
 	proc    core.Validator
 	chainDb ethdb.Database
 
+	// 挖矿者的地址
 	coinbase common.Address
 	extra    []byte
 
@@ -146,8 +153,10 @@ func newWorker(config *params.ChainConfig, engine consensus.Engine, eth Backend,
 		unconfirmed:    newUnconfirmedBlocks(eth.BlockChain(), miningLogAtDepth),
 	}
 	// Subscribe NewTxsEvent for tx pool
+	// 从tx pool中订阅NewTxsEvent
 	worker.txsSub = eth.TxPool().SubscribeNewTxsEvent(worker.txsCh)
 	// Subscribe events for blockchain
+	// 从blockchain中订阅event
 	worker.chainHeadSub = eth.BlockChain().SubscribeChainHeadEvent(worker.chainHeadCh)
 	worker.chainSideSub = eth.BlockChain().SubscribeChainSideEvent(worker.chainSideCh)
 	go worker.update()
@@ -188,6 +197,7 @@ func (self *worker) start() {
 	self.mu.Lock()
 	defer self.mu.Unlock()
 	atomic.StoreInt32(&self.running, 1)
+	// 启动各个agent
 	for agent := range self.agents {
 		agent.Start()
 	}
@@ -231,6 +241,7 @@ func (self *worker) update() {
 
 	for {
 		// A real event arrived, process interesting content
+		// 对各种事件进行处理
 		select {
 		// Handle ChainHeadEvent
 		case <-self.chainHeadCh:
@@ -249,6 +260,8 @@ func (self *worker) update() {
 			// Note all transactions received may not be continuous with transactions
 			// already included in the current mining block. These transactions will
 			// be automatically eliminated.
+			// 需要注意的是收到的transactions可能和当前的mining block中已经包含的transactions是
+			// 不一致的，这些transactions会被自动移除
 			if !self.isRunning() {
 				self.currentMu.Lock()
 				txs := make(map[common.Address]types.Transactions)
@@ -305,6 +318,7 @@ func (self *worker) wait() {
 				continue
 			}
 			// Broadcast the block and announce chain insertion event
+			// 广播block并且声明chain insertion event
 			self.mux.Post(core.NewMinedBlockEvent{Block: block})
 			var (
 				events []interface{}
@@ -317,6 +331,7 @@ func (self *worker) wait() {
 			self.chain.PostChainEvents(events, logs)
 
 			// Insert the block into the set of pending ones to wait for confirmations
+			// 将block加入the set of pending ones，等待confirmations
 			self.unconfirmed.Insert(block.NumberU64(), block.Hash())
 		}
 	}
@@ -330,6 +345,7 @@ func (self *worker) push(p *Package) {
 }
 
 // makeCurrent creates a new environment for the current cycle.
+// makeCurrent创建一个新的environment用于current cycle
 func (self *worker) makeCurrent(parent *types.Block, header *types.Header) error {
 	state, err := self.chain.StateAt(parent.Root())
 	if err != nil {
@@ -384,6 +400,7 @@ func (self *worker) commitNewWork() {
 	}
 
 	num := parent.Number()
+	// 创建header
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
@@ -392,6 +409,7 @@ func (self *worker) commitNewWork() {
 		Time:       big.NewInt(tstamp),
 	}
 	// Only set the coinbase if our consensus engine is running (avoid spurious block rewards)
+	// 只有在consensus engine处于running状态才设置coinbase
 	if self.isRunning() {
 		if self.coinbase == (common.Address{}) {
 			log.Error("Refusing to mine without etherbase")
@@ -458,6 +476,7 @@ func (self *worker) commitNewWork() {
 
 	// Create an empty block based on temporary copied state for sealing in advance without waiting block
 	// execution finished.
+	// 创建一个empty block
 	emptyState := env.state.Copy()
 	if emptyBlock, err = self.engine.Finalize(self.chain, header, emptyState, nil, uncles, nil); err != nil {
 		log.Error("Failed to finalize block for temporary sealing", "err", err)
@@ -472,6 +491,7 @@ func (self *worker) commitNewWork() {
 	}
 
 	// Fill the block with all available pending transactions.
+	// 用可得的pending transactions填充block
 	pending, err := self.eth.TxPool().Pending()
 	if err != nil {
 		log.Error("Failed to fetch pending transactions", "err", err)

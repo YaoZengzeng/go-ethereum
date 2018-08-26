@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package eth implements the Ethereum protocol.
+// eth包实现了Ethereum protocol
 package eth
 
 import (
@@ -59,6 +60,7 @@ type LesServer interface {
 }
 
 // Ethereum implements the Ethereum full node service.
+// Ethereum实现了Ethereum的全节点服务
 type Ethereum struct {
 	config      *Config
 	chainConfig *params.ChainConfig
@@ -101,6 +103,7 @@ func (s *Ethereum) AddLesServer(ls LesServer) {
 
 // New creates a new Ethereum object (including the
 // initialisation of the common Ethereum object)
+// New创建一个新的Ethereum对象（包括初始化公共的Ethereum object）
 func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	if config.SyncMode == downloader.LightSync {
 		return nil, errors.New("can't run eth.Ethereum in light sync mode, use les.LightEthereum")
@@ -108,10 +111,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	if !config.SyncMode.IsValid() {
 		return nil, fmt.Errorf("invalid sync mode %d", config.SyncMode)
 	}
+	// 创建ethereum database
 	chainDb, err := CreateDB(ctx, config, "chaindata")
 	if err != nil {
 		return nil, err
 	}
+	// 获取genesis block
 	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlock(chainDb, config.Genesis)
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
@@ -124,6 +129,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		chainConfig:    chainConfig,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
+		// 创建共识引擎
 		engine:         CreateConsensusEngine(ctx, &config.Ethash, chainConfig, chainDb),
 		shutdownChan:   make(chan bool),
 		networkID:      config.NetworkId,
@@ -146,11 +152,13 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		vmConfig    = vm.Config{EnablePreimageRecording: config.EnablePreimageRecording}
 		cacheConfig = &core.CacheConfig{Disabled: config.NoPruning, TrieNodeLimit: config.TrieCache, TrieTimeLimit: config.TrieTimeout}
 	)
+	// 初始化block chain对象
 	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, eth.chainConfig, eth.engine, vmConfig)
 	if err != nil {
 		return nil, err
 	}
 	// Rewind the chain in case of an incompatible config upgrade.
+	// 当出现不兼容的config upgrade，rewind the chain
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
 		eth.blockchain.SetHead(compat.RewindTo)
@@ -167,7 +175,9 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		return nil, err
 	}
 
+	// 初始化miner
 	eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.engine)
+	// 设置miner的extra data
 	eth.miner.SetExtra(makeExtraData(config.ExtraData))
 
 	eth.APIBackend = &EthAPIBackend{eth, nil}
@@ -210,6 +220,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ethdb.Data
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service
+// CreateConsensusEngine创建所需的consensus engine实例用于Ethereum service
 func CreateConsensusEngine(ctx *node.ServiceContext, config *ethash.Config, chainConfig *params.ChainConfig, db ethdb.Database) consensus.Engine {
 	// If proof-of-authority is requested, set it up
 	if chainConfig.Clique != nil {
@@ -217,6 +228,7 @@ func CreateConsensusEngine(ctx *node.ServiceContext, config *ethash.Config, chai
 	}
 	// Otherwise assume proof-of-work
 	switch config.PowMode {
+	// pow的各种模式
 	case ethash.ModeFake:
 		log.Warn("Ethash used in fake mode")
 		return ethash.NewFaker()
@@ -235,6 +247,7 @@ func CreateConsensusEngine(ctx *node.ServiceContext, config *ethash.Config, chai
 			DatasetsInMem:  config.DatasetsInMem,
 			DatasetsOnDisk: config.DatasetsOnDisk,
 		})
+		// 默认关闭CPU mining
 		engine.SetThreads(-1) // Disable CPU mining
 		return engine
 	}
@@ -306,6 +319,7 @@ func (s *Ethereum) Etherbase() (eb common.Address, err error) {
 	etherbase := s.etherbase
 	s.lock.RUnlock()
 
+	// 如果etherbase不为空，则直接返回
 	if etherbase != (common.Address{}) {
 		return etherbase, nil
 	}
@@ -317,6 +331,8 @@ func (s *Ethereum) Etherbase() (eb common.Address, err error) {
 			s.etherbase = etherbase
 			s.lock.Unlock()
 
+			// Etherbase已经被自动配置了
+			// 为第一个wallet的accounts[0]
 			log.Info("Etherbase automatically configured", "address", etherbase)
 			return etherbase, nil
 		}
@@ -334,6 +350,7 @@ func (s *Ethereum) SetEtherbase(etherbase common.Address) {
 }
 
 func (s *Ethereum) StartMining(local bool) error {
+	// 获取ethereum的coin base
 	eb, err := s.Etherbase()
 	if err != nil {
 		log.Error("Cannot start mining without etherbase", "err", err)
@@ -352,6 +369,8 @@ func (s *Ethereum) StartMining(local bool) error {
 		// mechanism introduced to speed sync times. CPU mining on mainnet is ludicrous
 		// so none will ever hit this path, whereas marking sync done on CPU mining
 		// will ensure that private networks work in single miner mode too.
+		// 如果启动了local mining（即使用CPU），我们可以关闭在加速sync times时引入的transaction
+		// rejection机制，CPU mining在mainnet是非常可笑的，因此没有人会执行到此
 		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
 	}
 	go s.miner.Start(eb)

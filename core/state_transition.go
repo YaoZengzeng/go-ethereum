@@ -35,7 +35,9 @@ var (
 The State Transitioning Model
 
 A state transition is a change made when a transaction is applied to the current world state
+一个state transition是当前的transaction施加到当前的world state产生的变化
 The state transitioning model does all the necessary work to work out a valid new state root.
+state transitioning model做了所有工作用于得到一个新的合法的state root
 
 1) Nonce handling
 2) Pre pay gas
@@ -44,6 +46,9 @@ The state transitioning model does all the necessary work to work out a valid ne
 == If contract creation ==
   4a) Attempt to run transaction data
   4b) If valid, use result as code for the new state object
+  如果是创建一个contract
+  4a) 试着运行transaction data
+  4b) 如果合法的话，将结果作为新的state object的code
 == end ==
 5) Run Script section
 6) Derive new state root
@@ -109,6 +114,7 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 }
 
 // NewStateTransition initialises and returns a new state transition object.
+// NewStateTransition初始化并且返回一个新的state transition对象
 func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
 	return &StateTransition{
 		gp:       gp,
@@ -123,11 +129,15 @@ func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition 
 
 // ApplyMessage computes the new state by applying the given message
 // against the old state within the environment.
+// ApplyMessage根据给定的message以及environment中的old state计算new state
 //
 // ApplyMessage returns the bytes returned by any EVM execution (if it took place),
 // the gas used (which includes gas refunds) and an error if it failed. An error always
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
+// ApplyMessage返回EVM执行返回的数据，使用的gas，以及error，如果允许出多的话
+// 一个error总是表示一个core error，意味着在这种特定的state之下，该message总会fail并且不会被收入到
+// block中
 func ApplyMessage(evm *vm.EVM, msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
 	return NewStateTransition(evm, msg, gp).TransitionDb()
 }
@@ -180,13 +190,16 @@ func (st *StateTransition) preCheck() error {
 // TransitionDb will transition the state by applying the current message and
 // returning the result including the used gas. It returns an error if failed.
 // An error indicates a consensus issue.
+// TransitionDb会通过应用当前的message改变state并且返回result包括使用的gas
 func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bool, err error) {
 	if err = st.preCheck(); err != nil {
 		return
 	}
 	msg := st.msg
+	// 获取transaction的发送者
 	sender := vm.AccountRef(msg.From())
 	homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
+	// 如果transition的接收者为nil，则说明需要创建一个contract
 	contractCreation := msg.To() == nil
 
 	// Pay intrinsic gas
@@ -206,6 +219,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		vmerr error
 	)
 	if contractCreation {
+		// 创建新的contract
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
 	} else {
 		// Increment the nonce for the next transaction

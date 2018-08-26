@@ -39,18 +39,22 @@ var (
 
 // Seal implements consensus.Engine, attempting to find a nonce that satisfies
 // the block's difficulty requirements.
+// Seal实现了consensus.Engine，试着寻找一个nonce使它满足block的difficulty requirements
 func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
 	// If we're running a fake PoW, simply return a 0 nonce immediately
+	// 如果我们运行一个fake PoW，则立即返回nonce为0
 	if ethash.config.PowMode == ModeFake || ethash.config.PowMode == ModeFullFake {
 		header := block.Header()
 		header.Nonce, header.MixDigest = types.BlockNonce{}, common.Hash{}
 		return block.WithSeal(header), nil
 	}
 	// If we're running a shared PoW, delegate sealing to it
+	// 如果我们运行一个shared PoW，则发送sealing给它
 	if ethash.shared != nil {
 		return ethash.shared.Seal(chain, block, stop)
 	}
 	// Create a runner and the multiple search threads it directs
+	// 创建一个runner以及多个search threads
 	abort := make(chan struct{})
 
 	ethash.lock.Lock()
@@ -65,16 +69,19 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, stop
 	}
 	ethash.lock.Unlock()
 	if threads == 0 {
+		// 如果ethash中的threads设置为0，则将其默认初始化为机器CPU的核数
 		threads = runtime.NumCPU()
 	}
 	if threads < 0 {
 		threads = 0 // Allows disabling local mining without extra logic around local/remote
 	}
 	// Push new work to remote sealer
+	// 将work推送到remote sealer
 	if ethash.workCh != nil {
 		ethash.workCh <- block
 	}
 	var pend sync.WaitGroup
+	// 创建threads个goroutine进行mining
 	for i := 0; i < threads; i++ {
 		pend.Add(1)
 		go func(id int, nonce uint64) {
@@ -90,20 +97,24 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, stop
 		close(abort)
 	case result = <-ethash.resultCh:
 		// One of the threads found a block, abort all others
+		// 如果有其中一个threads找到了block，则直接退出其他的
 		close(abort)
 	case <-ethash.update:
 		// Thread count was changed on user request, restart
+		// 如果thread count根据用户请求改变了，则重启
 		close(abort)
 		pend.Wait()
 		return ethash.Seal(chain, block, stop)
 	}
 	// Wait for all miners to terminate and return the block
+	// 等待所有miner终结并且返回block
 	pend.Wait()
 	return result, nil
 }
 
 // mine is the actual proof-of-work miner that searches for a nonce starting from
 // seed that results in correct final block difficulty.
+// mine是真正的pow miner，它会从一个seed开始寻找nonce，直到找到正确的block difficulty
 func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan struct{}, found chan *types.Block) {
 	// Extract some data from the header
 	var (
@@ -146,6 +157,7 @@ search:
 
 				// Seal and return a block (if still needed)
 				select {
+				// 找到了区块
 				case found <- block.WithSeal(header):
 					logger.Trace("Ethash nonce found and reported", "attempts", nonce-seed, "nonce", nonce)
 				case <-abort:
@@ -162,6 +174,7 @@ search:
 }
 
 // remote starts a standalone goroutine to handle remote mining related stuff.
+// remote启动一个单独的goroutine用于处理remote mining相关的事务
 func (ethash *Ethash) remote() {
 	var (
 		works       = make(map[common.Hash]*types.Block)
@@ -198,6 +211,8 @@ func (ethash *Ethash) remote() {
 	// submitWork verifies the submitted pow solution, returning
 	// whether the solution was accepted or not (not can be both a bad pow as well as
 	// any other error, like no pending work or stale mining result).
+	// submitWork确认提交的pow solution
+	// 返回solution是否被接收
 	submitWork := func(nonce types.BlockNonce, mixDigest common.Hash, hash common.Hash) bool {
 		// Make sure the work submitted is present
 		block := works[hash]
@@ -238,8 +253,10 @@ func (ethash *Ethash) remote() {
 	for {
 		select {
 		case block := <-ethash.workCh:
+			// 从ethash.workCh中获取最新的block
 			if currentWork != nil && block.ParentHash() != currentWork.ParentHash() {
 				// Start new round mining, throw out all previous work.
+				// 启动新一轮的mining，抛弃所有之前的工作
 				works = make(map[common.Hash]*types.Block)
 			}
 			// Update current work with new received block.

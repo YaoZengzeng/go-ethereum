@@ -250,11 +250,16 @@ func main() {
 // geth is the main entry point into the system if no special subcommand is ran.
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
+// 如果没有指定任何的子命令的话，geth就是进入系统的主入口
+// 它会根据默认的命令行参数创建一个default node，并且运行在blocking mode
+// 等待被关闭
 func geth(ctx *cli.Context) error {
 	if args := ctx.Args(); len(args) > 0 {
 		return fmt.Errorf("invalid command: %q", args[0])
 	}
+	// 对node进行配置
 	node := makeFullNode(ctx)
+	// 启动node
 	startNode(ctx, node)
 	node.Wait()
 	return nil
@@ -263,10 +268,13 @@ func geth(ctx *cli.Context) error {
 // startNode boots up the system node and all registered protocols, after which
 // it unlocks any requested accounts, and starts the RPC/IPC interfaces and the
 // miner.
+// startNode启动system node以及所有注册的protocols，之后它会解锁任何的requested accounts
+// 启动RPC/IPC接口以及miner
 func startNode(ctx *cli.Context, stack *node.Node) {
 	debug.Memsize.Add("node", stack)
 
 	// Start up the node itself
+	// 启动node自身
 	utils.StartNode(stack)
 
 	// Unlock any account specifically requested
@@ -280,6 +288,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 	}
 	// Register wallet event handlers to open and auto-derive wallets
+	// 注册wallet event handlers用于打开以及自动派生wallets
 	events := make(chan accounts.WalletEvent, 16)
 	stack.AccountManager().Subscribe(events)
 
@@ -321,8 +330,10 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		}
 	}()
 	// Start auxiliary services if enabled
+	// 启动一些辅助功能，如果使能的话
 	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
 		// Mining only makes sense if a full Ethereum node is running
+		// 只有full Ethereum node才能mining
 		if ctx.GlobalBool(utils.LightModeFlag.Name) || ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
 		}
@@ -331,16 +342,22 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 			utils.Fatalf("Ethereum service not running: %v", err)
 		}
 		// Use a reduced number of threads if requested
+		// 如果命令行指定的话，使用更少的线程数
 		if threads := ctx.GlobalInt(utils.MinerThreadsFlag.Name); threads > 0 {
+			// 创建一个threaded接口类型
 			type threaded interface {
 				SetThreads(threads int)
 			}
+			// 从ethereum.Engine()中解析出该接口类型
 			if th, ok := ethereum.Engine().(threaded); ok {
+				// 然后对线程数进行设置
 				th.SetThreads(threads)
 			}
 		}
 		// Set the gas price to the limits from the CLI and start mining
+		// 根据CLI中设定的limits设置gas price并且开始mining
 		ethereum.TxPool().SetGasPrice(utils.GlobalBig(ctx, utils.GasPriceFlag.Name))
+		// local为true
 		if err := ethereum.StartMining(true); err != nil {
 			utils.Fatalf("Failed to start mining: %v", err)
 		}

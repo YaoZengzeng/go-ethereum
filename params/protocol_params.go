@@ -27,6 +27,7 @@ const (
 	MinGasLimit          uint64 = 5000    // Minimum the gas limit may ever be.
 	GenesisGasLimit      uint64 = 4712388 // Gas limit of the Genesis block.
 
+	// Genesis block的extra data的最大大小为32个字节
 	MaximumExtraDataSize  uint64 = 32    // Maximum size extra data may be after Genesis.
 	ExpByteGas            uint64 = 10    // Times ceil(log256(exponent)) for the EXP instruction.
 	SloadGas              uint64 = 50    // Multiplied by the number of 32-byte words that are copied (round up) for any *COPY operation and added.
@@ -49,6 +50,7 @@ const (
 	EpochDuration    uint64 = 30000 // Duration between proof-of-work epochs.
 	CallGas          uint64 = 40    // Once per CALL operation & message call transaction.
 	CreateDataGas    uint64 = 200   //
+	// call/create stack最大的深度
 	CallCreateDepth  uint64 = 1024  // Maximum depth of call/create stack.
 	ExpGas           uint64 = 10    // Once per EXP instruction
 	LogGas           uint64 = 375   // Per LOG* operation.

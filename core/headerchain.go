@@ -45,14 +45,18 @@ const (
 // HeaderChain implements the basic block header chain logic that is shared by
 // core.BlockChain and light.LightChain. It is not usable in itself, only as
 // a part of either structure.
+// HeaderChain实现了基本的block header chain logic，它能被core.BlockChain和light.LightChain
+// 共享，它是无法独立使用的，只能被作为上述两个结构的一部分
 // It is not thread safe either, the encapsulating chain structures should do
 // the necessary mutex locking/unlocking.
+// 它不是线程安全的，做封装的chain structures应该做必要的mutex locking/unlocking
 type HeaderChain struct {
 	config *params.ChainConfig
 
 	chainDb       ethdb.Database
 	genesisHeader *types.Header
 
+	// currentHeader是当前的header chain的head（可能超过block chain）
 	currentHeader     atomic.Value // Current head of the header chain (may be above the block chain!)
 	currentHeaderHash common.Hash  // Hash of the current head of the header chain (prevent recomputing all the time)
 
@@ -417,6 +421,7 @@ func (hc *HeaderChain) HasHeader(hash common.Hash, number uint64) bool {
 
 // GetHeaderByNumber retrieves a block header from the database by number,
 // caching it (associated with its hash) if found.
+// GetHeaderByNumber根据number从数据库中返回一个block header，如果找到的话，缓存它
 func (hc *HeaderChain) GetHeaderByNumber(number uint64) *types.Header {
 	hash := rawdb.ReadCanonicalHash(hc.chainDb, number)
 	if hash == (common.Hash{}) {

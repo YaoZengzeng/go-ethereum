@@ -31,6 +31,7 @@ import (
 )
 
 // BlockGen creates blocks for testing.
+// BlockGen创建blocks用于测试
 // See GenerateChain for a detailed explanation.
 type BlockGen struct {
 	i           int
@@ -51,6 +52,8 @@ type BlockGen struct {
 
 // SetCoinbase sets the coinbase of the generated block.
 // It can be called at most once.
+// SetCoinbase设置被创建的block的coinbase
+// 它最多只能调用一次
 func (b *BlockGen) SetCoinbase(addr common.Address) {
 	if b.gasPool != nil {
 		if len(b.txs) > 0 {
@@ -155,15 +158,22 @@ func (b *BlockGen) OffsetTime(seconds int64) {
 // GenerateChain creates a chain of n blocks. The first block's
 // parent will be the provided parent. db is used to store
 // intermediate states and should contain the parent's state trie.
+// GenerateChain创建一个有着n个block的chain，第一个block的parent是参数提供的
+// parent，db用于存储中间状态并且应该包含parent的state trie
 //
 // The generator function is called with a new block generator for
 // every block. Any transactions and uncles added to the generator
 // become part of the block. If gen is nil, the blocks will be empty
 // and their coinbase will be the zero address.
+// generator function会在每个block被创建的时候调用一次，任何添加到generator中的
+// transactions以及uncles都会变为block的一部分，如果gen是nil，则blocks为空，并且
+// 它们的coinbase会变为zero address
 //
 // Blocks created by GenerateChain do not contain valid proof of work
 // values. Inserting them into BlockChain requires use of FakePow or
 // a similar non-validating proof of work implementation.
+// 通过GenerateChain创建的Block不会包含正确的pow值，将它们插入BlockChain需要FakePow
+// 或者类似的non-validating pow实现
 func GenerateChain(config *params.ChainConfig, parent *types.Block, engine consensus.Engine, db ethdb.Database, n int, gen func(int, *BlockGen)) ([]*types.Block, []types.Receipts) {
 	if config == nil {
 		config = params.TestChainConfig
@@ -198,6 +208,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		if b.engine != nil {
 			block, _ := b.engine.Finalize(b.chainReader, b.header, statedb, b.txs, b.uncles, b.receipts)
 			// Write state changes to db
+			// 将state changes写会db
 			root, err := statedb.Commit(config.IsEIP158(b.header.Number))
 			if err != nil {
 				panic(fmt.Sprintf("state write error: %v", err))
@@ -217,6 +228,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		block, receipt := genblock(i, parent, statedb)
 		blocks[i] = block
 		receipts[i] = receipt
+		// 将当前block作为parent，再次创建
 		parent = block
 	}
 	return blocks, receipts

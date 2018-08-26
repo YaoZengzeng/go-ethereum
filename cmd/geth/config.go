@@ -109,6 +109,7 @@ func defaultNodeConfig() node.Config {
 
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
+	// 加载默认配置
 	cfg := gethConfig{
 		Eth:       eth.DefaultConfig,
 		Shh:       whisper.DefaultConfig,
@@ -124,6 +125,7 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	}
 
 	// Apply flags.
+	// 用flag对默认配置进行覆盖
 	utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {

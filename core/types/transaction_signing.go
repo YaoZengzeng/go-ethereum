@@ -39,6 +39,7 @@ type sigCache struct {
 }
 
 // MakeSigner returns a Signer based on the given chain config and block number.
+// MakeSigner根据给定的chain config以及block number返回一个Signer
 func MakeSigner(config *params.ChainConfig, blockNumber *big.Int) Signer {
 	var signer Signer
 	switch {
@@ -90,6 +91,7 @@ func Sender(signer Signer, tx *Transaction) (common.Address, error) {
 
 // Signer encapsulates transaction signature handling. Note that this interface is not a
 // stable API and may change at any time to accommodate new protocol rules.
+// Signer对transaction的signature handling进行了封装
 type Signer interface {
 	// Sender returns the sender address of the transaction.
 	Sender(tx *Transaction) (common.Address, error)

@@ -40,6 +40,7 @@ var (
 // A BlockNonce is a 64-bit hash which proves (combined with the
 // mix-hash) that a sufficient amount of computation has been carried
 // out on a block.
+// BlockNonce是一个64-bit的hash（和mix-hash一起）用于证明block中已经包含了足够的计算量
 type BlockNonce [8]byte
 
 // EncodeNonce converts the given integer to a block nonce.
@@ -67,6 +68,7 @@ func (n *BlockNonce) UnmarshalText(input []byte) error {
 //go:generate gencodec -type Header -field-override headerMarshaling -out gen_header_json.go
 
 // Header represents a block header in the Ethereum blockchain.
+// Header代表了Ethereum blockchain的block header
 type Header struct {
 	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
 	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
@@ -142,17 +144,20 @@ type Body struct {
 }
 
 // Block represents an entire block in the Ethereum blockchain.
+// Block代表了在Ethereum blockchain中一个完整的block
 type Block struct {
 	header       *Header
 	uncles       []*Header
 	transactions Transactions
 
 	// caches
+	// 哈希值会在第一次调用Hash的时候被计算，并缓存
 	hash atomic.Value
 	size atomic.Value
 
 	// Td is used by package core to store the total difficulty
 	// of the chain up to and including the block.
+	// Td是package core用于存储直到这个block的total difficulty
 	td *big.Int
 
 	// These fields are used by package eth to track
@@ -193,10 +198,13 @@ type storageblock struct {
 // NewBlock creates a new block. The input data is copied,
 // changes to header and to the field values will not affect the
 // block.
+// NewBlock创建一个新的block，输入的数据会被拷贝，用于改变header
 //
 // The values of TxHash, UncleHash, ReceiptHash and Bloom in header
 // are ignored and set to values derived from the given txs, uncles
 // and receipts.
+// header中的TxHash，UncleHash，ReceiptHash和Bloom都会被忽略，而会设置为给定的
+// txs，uncles以及receipts
 func NewBlock(header *Header, txs []*Transaction, uncles []*Header, receipts []*Receipt) *Block {
 	b := &Block{header: CopyHeader(header), td: new(big.Int)}
 
@@ -353,6 +361,7 @@ func CalcUncleHash(uncles []*Header) common.Hash {
 
 // WithSeal returns a new block with the data from b but the header replaced with
 // the sealed one.
+// WithSeal返回一个新的block，数据从b中获取，但是header是从参数中获取
 func (b *Block) WithSeal(header *Header) *Block {
 	cpy := *header
 

@@ -39,6 +39,8 @@ type Config struct {
 
 // Oracle recommends gas prices based on the content of recent
 // blocks. Suitable for both light and full clients.
+// Oracle根据当前的blocks推测gas prices
+// 对于light clients和full clients都是适用的
 type Oracle struct {
 	backend   ethapi.Backend
 	lastHead  common.Hash

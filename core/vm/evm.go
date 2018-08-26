@@ -41,6 +41,7 @@ type (
 )
 
 // run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
+// run运行给定的contract并且负责进行预编译
 func run(evm *EVM, contract *Contract, input []byte) ([]byte, error) {
 	if contract.CodeAddr != nil {
 		precompiles := PrecompiledContractsHomestead
@@ -51,6 +52,7 @@ func run(evm *EVM, contract *Contract, input []byte) ([]byte, error) {
 			return RunPrecompiledContract(p, input, contract)
 		}
 	}
+	// 遍历evm的interpreters，直到找到一个匹配的进行运行
 	for _, interpreter := range evm.interpreters {
 		if interpreter.CanRun(contract.Code) {
 			if evm.interpreter != interpreter {
@@ -69,11 +71,14 @@ func run(evm *EVM, contract *Contract, input []byte) ([]byte, error) {
 
 // Context provides the EVM with auxiliary information. Once provided
 // it shouldn't be modified.
+// Context为EVM提供了配置信息，一旦提供了就不能被修改
 type Context struct {
 	// CanTransfer returns whether the account contains
 	// sufficient ether to transfer the value
+	// CanTransfer返回account中是否包含了足够的ether能传输value
 	CanTransfer CanTransferFunc
 	// Transfer transfers ether from one account to the other
+	// Transfer将ether从一个account传输到另一个
 	Transfer TransferFunc
 	// GetHash returns the hash corresponding to n
 	GetHash GetHashFunc
@@ -97,8 +102,11 @@ type Context struct {
 // revert-state-and-consume-all-gas operation, no checks on
 // specific errors should ever be performed. The interpreter makes
 // sure that any errors generated are to be considered faulty code.
+// EVM提供了必要的工具用于在给定的状态和上下文中运行一个contract
+// 需要注意的是任何调用产生的错误都要被认为是revert-state-and-comsume-all-gas operation
 //
 // The EVM should never be reused and is not thread safe.
+// EVM不能被重用并且不是线程安全的
 type EVM struct {
 	// Context provides auxiliary blockchain related information
 	Context
@@ -113,9 +121,11 @@ type EVM struct {
 	chainRules params.Rules
 	// virtual machine configuration options used to initialise the
 	// evm.
+	// 用于初始化evm所需的虚拟机配置选项
 	vmConfig Config
 	// global (to this context) ethereum virtual machine
 	// used throughout the execution of the tx.
+	// 在该tx执行过程中使用的全局EVM
 	interpreters []Interpreter
 	interpreter  Interpreter
 	// abort is used to abort the EVM calling operations
@@ -124,11 +134,13 @@ type EVM struct {
 	// callGasTemp holds the gas available for the current call. This is needed because the
 	// available gas is calculated in gasCall* according to the 63/64 rule and later
 	// applied in opCall*.
+	// callGasTemp保存了当前调用可得的gas
 	callGasTemp uint64
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
+// NewEVM返回一个新的EVM，返回的EVM不是线程安全的并且只能使用一次
 func NewEVM(ctx Context, statedb StateDB, chainConfig *params.ChainConfig, vmConfig Config) *EVM {
 	evm := &EVM{
 		Context:      ctx,
@@ -160,6 +172,9 @@ func (evm *EVM) Interpreter() Interpreter {
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
+// Call执行和addr相关的contract，将给定的input作为输入
+// 它也会处理任何必要的value transfer以及必要的步骤创建accounts以及reverse state万一执行
+// 发生错误或者value transfer发生错误
 func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 		return nil, gas, nil
@@ -179,6 +194,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		snapshot = evm.StateDB.Snapshot()
 	)
 	if !evm.StateDB.Exist(addr) {
+		// 如果addr不存在，则创建一个account
 		precompiles := PrecompiledContractsHomestead
 		if evm.ChainConfig().IsByzantium(evm.BlockNumber) {
 			precompiles = PrecompiledContractsByzantium
@@ -197,6 +213,8 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
+	// 初始化一个新的contract并且设置EVM使用的code
+	// contract是一个scoped environment，只针对这个execution context
 	contract := NewContract(caller, to, value, gas)
 	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
 
@@ -210,11 +228,13 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			evm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
 		}()
 	}
+	// 执行contract
 	ret, err = run(evm, contract, input)
 
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
+	// 如果evm返回了error，则返回到snapshot并且消耗任何剩余的gas
 	if err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != errExecutionReverted {
@@ -351,16 +371,19 @@ func (evm *EVM) create(caller ContractRef, code []byte, gas uint64, value *big.I
 	if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
 		return nil, common.Address{}, gas, ErrInsufficientBalance
 	}
+	// 根据调用者的地址作为key，可以对StateDB进行查询
 	nonce := evm.StateDB.GetNonce(caller.Address())
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 
 	// Ensure there's no existing contract already at the designated address
+	// 确保在特定的地址没有已经存在的contract
 	contractHash := evm.StateDB.GetCodeHash(address)
 	if evm.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != emptyCodeHash) {
 		return nil, common.Address{}, 0, ErrContractAddressCollision
 	}
 	// Create a new account on the state
 	snapshot := evm.StateDB.Snapshot()
+	// 创建一个新的account
 	evm.StateDB.CreateAccount(address)
 	if evm.ChainConfig().IsEIP158(evm.BlockNumber) {
 		evm.StateDB.SetNonce(address, 1)
@@ -370,6 +393,8 @@ func (evm *EVM) create(caller ContractRef, code []byte, gas uint64, value *big.I
 	// initialise a new contract and set the code that is to be used by the
 	// EVM. The contract is a scoped environment for this execution context
 	// only.
+	// 初始化一个新的contract并且设置用于被EVM使用的code
+	// 这个contract是一个scoped environment只用于这个execution context
 	contract := NewContract(caller, AccountRef(address), value, gas)
 	contract.SetCallCode(&address, crypto.Keccak256Hash(code), code)
 
@@ -385,11 +410,14 @@ func (evm *EVM) create(caller ContractRef, code []byte, gas uint64, value *big.I
 	ret, err := run(evm, contract, nil)
 
 	// check whether the max code size has been exceeded
+	// 检查是否超过了max code size
 	maxCodeSizeExceeded := evm.ChainConfig().IsEIP158(evm.BlockNumber) && len(ret) > params.MaxCodeSize
 	// if the contract creation ran successfully and no errors were returned
 	// calculate the gas required to store the code. If the code could not
 	// be stored due to not enough gas set an error and let it be handled
 	// by the error checking condition below.
+	// 如果成功创建了contract并且在计算存储这些code所需的gas没有错误
+	// 如果因为没有足够的gas而不能存储，则返回错误，由下面的代码进行处理
 	if err == nil && !maxCodeSizeExceeded {
 		createDataGas := uint64(len(ret)) * params.CreateDataGas
 		if contract.UseGas(createDataGas) {
@@ -420,7 +448,9 @@ func (evm *EVM) create(caller ContractRef, code []byte, gas uint64, value *big.I
 }
 
 // Create creates a new contract using code as deployment code.
+// Create创建一个新的contract，将code作为部署的code
 func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+	// 创建contract的地址
 	contractAddr = crypto.CreateAddress(caller.Address(), evm.StateDB.GetNonce(caller.Address()))
 	return evm.create(caller, code, gas, value, contractAddr)
 }

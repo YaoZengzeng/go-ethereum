@@ -24,6 +24,8 @@ import (
 // Stack is an object for basic stack operations. Items popped to the stack are
 // expected to be changed and modified. stack does not take care of adding newly
 // initialised objects.
+// Stack是用于基本的stack操作的对象，从stack中弹出的Items都是期望被修改的
+// stack不负责增加新的initialised objects
 type Stack struct {
 	data []*big.Int
 }

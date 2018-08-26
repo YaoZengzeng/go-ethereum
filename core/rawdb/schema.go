@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package rawdb contains a collection of low level database accessors.
+// rawdb包含了一系列对于底层数据库的存取操作
 package rawdb
 
 import (
@@ -33,6 +34,7 @@ var (
 	headHeaderKey = []byte("LastHeader")
 
 	// headBlockKey tracks the latest know full block's hash.
+	// headBlockKey追踪最后一个已知的full block的hash
 	headBlockKey = []byte("LastBlock")
 
 	// headFastBlockKey tracks the latest known incomplete block's hash duirng fast sync.

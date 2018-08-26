@@ -43,10 +43,12 @@ const (
 )
 
 // Receipt represents the results of a transaction.
+// Receipt代表了一个transaction的结果
 type Receipt struct {
 	// Consensus fields
 	PostState         []byte `json:"root"`
 	Status            uint64 `json:"status"`
+	// 总共累计使用的gas
 	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required"`
 	Bloom             Bloom  `json:"logsBloom"         gencodec:"required"`
 	Logs              []*Log `json:"logs"              gencodec:"required"`

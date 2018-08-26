@@ -31,6 +31,7 @@ type Deleter interface {
 }
 
 // Database wraps all database operations. All methods are safe for concurrent use.
+// Database是对所有的数据库操作的封装，所有的方法都是并行安全的
 type Database interface {
 	Putter
 	Deleter

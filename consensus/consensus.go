@@ -29,6 +29,8 @@ import (
 
 // ChainReader defines a small collection of methods needed to access the local
 // blockchain during header and/or uncle verification.
+// ChainReader定义了一系列的方法用于在header或者uncle verification的过程中对local blockchain
+// 进行访问
 type ChainReader interface {
 	// Config retrieves the blockchain's chain configuration.
 	Config() *params.ChainConfig
@@ -50,6 +52,7 @@ type ChainReader interface {
 }
 
 // Engine is an algorithm agnostic consensus engine.
+// Engine是一个对算法透明的共识引擎
 type Engine interface {
 	// Author retrieves the Ethereum address of the account that minted the given
 	// block, which may be different from the header's coinbase if a consensus
@@ -73,10 +76,12 @@ type Engine interface {
 
 	// VerifySeal checks whether the crypto seal on a header is valid according to
 	// the consensus rules of the given engine.
+	// VeritySeal根据给定引擎的共识规则来检测header中的crypto seal是否合法
 	VerifySeal(chain ChainReader, header *types.Header) error
 
 	// Prepare initializes the consensus fields of a block header according to the
 	// rules of a particular engine. The changes are executed inline.
+	// Prepare根据给定引擎的规则对block header的consensus fields进行初始化
 	Prepare(chain ChainReader, header *types.Header) error
 
 	// Finalize runs any post-transaction state modifications (e.g. block rewards)
@@ -92,12 +97,14 @@ type Engine interface {
 
 	// CalcDifficulty is the difficulty adjustment algorithm. It returns the difficulty
 	// that a new block should have.
+	// CalcDifficulty是difficulty调整算法，返回一个新的block的difficulty
 	CalcDifficulty(chain ChainReader, time uint64, parent *types.Header) *big.Int
 
 	// APIs returns the RPC APIs this consensus engine provides.
 	APIs(chain ChainReader) []rpc.API
 
 	// Close terminates any background threads maintained by the consensus engine.
+	// Close关闭所有由consensus engin维护的backgroun threads
 	Close() error
 }
 

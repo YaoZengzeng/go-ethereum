@@ -25,19 +25,24 @@ import (
 )
 
 // Config are the configuration options for the Interpreter
+// Config是Interpreter的配置选项
 type Config struct {
 	// Debug enabled debugging Interpreter options
 	Debug bool
 	// Tracer is the op code logger
+	// Tracer是op code的logger
 	Tracer Tracer
 	// NoRecursion disabled Interpreter call, callcode,
 	// delegate call and create.
+	// NoRecursion禁止了Interpreter的call, callcode
 	NoRecursion bool
 	// Enable recording of SHA3/keccak preimages
 	EnablePreimageRecording bool
 	// JumpTable contains the EVM instruction table. This
 	// may be left uninitialised and will be set to the default
 	// table.
+	// JumpTable包含了EVM的指令表
+	// 它可能未被初始化并且被设置为default table
 	JumpTable [256]operation
 }
 
@@ -68,13 +73,16 @@ type Interpreter interface {
 }
 
 // EVMInterpreter represents an EVM interpreter
+// EVM解释器
 type EVMInterpreter struct {
 	evm      *EVM
 	cfg      Config
 	gasTable params.GasTable
 	intPool  *intPool
 
+	// 是否抛出有意义的modifications
 	readOnly   bool   // Whether to throw on stateful modifications
+	// 上一次CALL的返回数据，用于之后的重用
 	returnData []byte // Last CALL's return data for subsequent reuse
 }
 
@@ -111,6 +119,9 @@ func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, st
 			// for a call operation is the value. Transferring value from one
 			// account to the others means the state is modified and should also
 			// return with an error.
+			// 如果interpreter是以只读模式执行的，需要确保不会有发生修改state的操作执行
+			// 一个call operation的第三个stack item是value，从一个account转移value
+			// 到另一个account意味着state被修改，因此也应该返回error
 			if operation.writes || (op == CALL && stack.Back(2).BitLen() > 0) {
 				return errWriteProtection
 			}
@@ -121,10 +132,13 @@ func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, st
 
 // Run loops and evaluates the contract's code with the given input data and returns
 // the return byte-slice and an error if one occurred.
+// Run循环并且用给定的input data评估contract的code，返回byte-slice以及一个error
 //
 // It's important to note that any errors returned by the interpreter should be
 // considered a revert-and-consume-all-gas operation except for
 // errExecutionReverted which means revert-and-keep-gas-left.
+// interpreter返回的任何错误都是revert-and-consume-all-gas操作
+// 除了errExecutionReverted，它意味着revert-and-keep-gas-left
 func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err error) {
 	if in.intPool == nil {
 		in.intPool = poolOfIntPools.get()
@@ -135,11 +149,14 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 	}
 
 	// Increment the call depth which is restricted to 1024
+	// 增加call depth，限制为1024
 	in.evm.depth++
 	defer func() { in.evm.depth-- }()
 
 	// Reset the previous call's return data. It's unimportant to preserve the old buffer
 	// as every returning call will return new data anyway.
+	// 重置previous call的返回数据，保存之前的old buffer并不重要
+	// 因为任何returning call都会返回新的数据
 	in.returnData = nil
 
 	// Don't bother with the execution if there's no code.
@@ -181,6 +198,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 	// explicit STOP, RETURN or SELFDESTRUCT is executed, an error occurred during
 	// the execution of one of the operations or until the done flag is set by the
 	// parent context.
+	// Interpreter的主循环，这个循环会一直执行直到显式地执行了STOP, RETURN或者SELFDESTRUCT
+	// 在执行中遇到了错误或者parent context设置了done flag
 	for atomic.LoadInt32(&in.evm.abort) == 0 {
 		if in.cfg.Debug {
 			// Capture pre-execution values for tracing.
@@ -189,7 +208,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 
 		// Get the operation from the jump table and validate the stack to ensure there are
 		// enough stack items available to perform the operation.
+		// 从jump table中获取operation并且对stack进行检测
 		op = contract.GetOp(pc)
+		// 从JumpTable中获取operation
 		operation := in.cfg.JumpTable[op]
 		if !operation.valid {
 			return nil, fmt.Errorf("invalid opcode 0x%x", int(op))
@@ -218,6 +239,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 		}
 		// consume the gas and return an error if not enough gas is available.
 		// cost is explicitly set so that the capture state defer method can get the proper cost
+		// 消耗gas并且返回error，如果没有足够的gas可用的话
 		cost, err = operation.gasCost(in.gasTable, in.evm, contract, stack, mem, memorySize)
 		if err != nil || !contract.UseGas(cost) {
 			return nil, ErrOutOfGas
@@ -232,6 +254,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 		}
 
 		// execute the operation
+		// 执行operation
 		res, err := operation.execute(&pc, in, contract, mem, stack)
 		// verifyPool is a build flag. Pool verification makes sure the integrity
 		// of the integer pool by comparing values to a default value.

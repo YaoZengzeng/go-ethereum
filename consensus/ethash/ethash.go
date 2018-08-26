@@ -381,6 +381,7 @@ const (
 )
 
 // Config are the configuration parameters of the ethash.
+// Config是ethash的配置参数
 type Config struct {
 	CacheDir       string
 	CachesInMem    int
@@ -417,6 +418,7 @@ type sealWork struct {
 
 // Ethash is a consensus engine based on proof-of-work implementing the ethash
 // algorithm.
+// Ethash是一个基于POW的共识引擎，实现了ethash算法
 type Ethash struct {
 	config Config
 
@@ -425,6 +427,7 @@ type Ethash struct {
 
 	// Mining related fields
 	rand     *rand.Rand    // Properly seeded random source for nonces
+	// mining thread的数目
 	threads  int           // Number of threads to mine on if mining
 	update   chan struct{} // Notification channel to update mining parameters
 	hashrate metrics.Meter // Meter tracking the average hashrate
@@ -438,6 +441,7 @@ type Ethash struct {
 	submitRateCh chan *hashrate    // Channel used for remote sealer to submit their mining hashrate
 
 	// The fields below are hooks for testing
+	// 接下来的字段用于testing
 	shared    *Ethash       // Shared PoW verifier to avoid cache regeneration
 	fakeFail  uint64        // Block number which fails PoW check even in fake mode
 	fakeDelay time.Duration // Time delay to sleep for before returning from verify
@@ -448,6 +452,7 @@ type Ethash struct {
 }
 
 // New creates a full sized ethash PoW scheme and starts a background thread for remote mining.
+// New创建一个full sized ethash PoW框架并且启动后台thread用于remote mining
 func New(config Config) *Ethash {
 	if config.CachesInMem <= 0 {
 		log.Warn("One ethash cache must always be in memory", "requested", config.CachesInMem)
@@ -501,6 +506,8 @@ func NewTester() *Ethash {
 // NewFaker creates a ethash consensus engine with a fake PoW scheme that accepts
 // all blocks' seal as valid, though they still have to conform to the Ethereum
 // consensus rules.
+// NewFacker创建一个有着fake PoW机制的ethash共识引擎，它能接受任何block的seal作为valid
+// 尽管它们还是要遵守Ethereum的共识规则
 func NewFaker() *Ethash {
 	return &Ethash{
 		config: Config{
@@ -550,6 +557,7 @@ func NewShared() *Ethash {
 }
 
 // Close closes the exit channel to notify all backend threads exiting.
+// Close关闭exit channel，用于通知所有后台threads退出
 func (ethash *Ethash) Close() error {
 	var err error
 	ethash.closeOnce.Do(func() {
@@ -618,6 +626,10 @@ func (ethash *Ethash) Threads() int {
 // specified, the miner will use all cores of the machine. Setting a thread
 // count below zero is allowed and will cause the miner to idle, without any
 // work being done.
+// SetThreads更新当前使能的mining threads的数目
+// 调用这个方法不会开始mining，只会设置thread的数目
+// 如果指定的数目为0，则miner会使用机器全部的cpu核数
+// 将thread count设置为小于0也是允许的，但是会导致miner空转，不会做任何工作
 func (ethash *Ethash) SetThreads(threads int) {
 	ethash.lock.Lock()
 	defer ethash.lock.Unlock()
@@ -628,6 +640,7 @@ func (ethash *Ethash) SetThreads(threads int) {
 		return
 	}
 	// Update the threads and ping any running seal to pull in any changes
+	// 更新ethash的threads数目
 	ethash.threads = threads
 	select {
 	case ethash.update <- struct{}{}:

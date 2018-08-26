@@ -25,6 +25,8 @@ import (
 // destinations stores one map per contract (keyed by hash of code).
 // The maps contain an entry for each location of a JUMPDEST
 // instruction.
+// destinations为每一个contract存储了一个map（根据code的哈希进行索引）
+// 这个map为一个JUMPDEST指令的每个location包含了一个entry
 type destinations map[common.Hash]bitvec
 
 // has checks whether code has a JUMPDEST at dest.

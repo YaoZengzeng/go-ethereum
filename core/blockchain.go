@@ -66,20 +66,27 @@ const (
 
 // CacheConfig contains the configuration values for the trie caching/pruning
 // that's resident in a blockchain.
+// CacheConfig包含了blockchain中的trie的caching/pruning的配置信息
 type CacheConfig struct {
 	Disabled      bool          // Whether to disable trie write caching (archive node)
+	// 将当前内存中的trie刷新到磁盘中的内存限制
 	TrieNodeLimit int           // Memory limit (MB) at which to flush the current in-memory trie to disk
+	// 将当前内存中的trie刷新到磁盘中的时间限制
 	TrieTimeLimit time.Duration // Time limit after which to flush the current in-memory trie to disk
 }
 
 // BlockChain represents the canonical chain given a database with a genesis
 // block. The Blockchain manages chain imports, reverts, chain reorganisations.
+// BlocChain代表了一个给定有着genesis block的数据创建的canonical chain
+// Blockchain管理chain的imports，reverts以及reorganisations
 //
 // Importing blocks in to the block chain happens according to the set of rules
 // defined by the two stage Validator. Processing of blocks is done using the
 // Processor which processes the included transaction. The validation of the state
 // is done in the second part of the Validator. Failing results in aborting of
 // the import.
+// 将一个block加入block chain需要经过两阶段的Validator，Processor处理block中包含的transaction,
+// 而对于状态的检查，则由第二阶段的Validator进行检查
 //
 // The BlockChain also helps in returning blocks from **any** chain included
 // in the database as well as blocks that represents the canonical chain. It's
@@ -134,6 +141,8 @@ type BlockChain struct {
 // NewBlockChain returns a fully initialised block chain using information
 // available in the database. It initialises the default Ethereum Validator and
 // Processor.
+// NewBlockChain根据数据库提供的信息创建一个完全初始化的bloch chain
+// 它会初始化Ethereum Validator以及Processor
 func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config) (*BlockChain, error) {
 	if cacheConfig == nil {
 		cacheConfig = &CacheConfig{
@@ -178,6 +187,7 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		return nil, err
 	}
 	// Check the current state of the block hashes and make sure that we do not have any of the bad blocks in our chain
+	// 检测block hashes的当前状态,并且确保我们没有任何的bad blocks在我们的chain中
 	for hash := range BadHashes {
 		if header := bc.GetHeaderByHash(hash); header != nil {
 			// get the canonical block corresponding to the offending header's number
@@ -201,15 +211,19 @@ func (bc *BlockChain) getProcInterrupt() bool {
 
 // loadLastState loads the last known chain state from the database. This method
 // assumes that the chain manager mutex is held.
+// loadLastState从数据库中加载最新已知的chain state，该方法假设已经持有了chain manager的mutex
 func (bc *BlockChain) loadLastState() error {
 	// Restore the last known head block
+	// 恢复last known head block
 	head := rawdb.ReadHeadBlockHash(bc.db)
 	if head == (common.Hash{}) {
 		// Corrupt or empty database, init from scratch
+		// 如果数据库为空，则进行重置
 		log.Warn("Empty database, resetting chain")
 		return bc.Reset()
 	}
 	// Make sure the entire head block is available
+	// 确保整个的head block都是可访问的
 	currentBlock := bc.GetBlockByHash(head)
 	if currentBlock == nil {
 		// Corrupt or empty database, init from scratch
@@ -225,9 +239,11 @@ func (bc *BlockChain) loadLastState() error {
 		}
 	}
 	// Everything seems to be fine, set as the head block
+	// 设置currentBlock
 	bc.currentBlock.Store(currentBlock)
 
 	// Restore the last known head header
+	// 设置current header
 	currentHeader := currentBlock.Header()
 	if head := rawdb.ReadHeadHeaderHash(bc.db); head != (common.Hash{}) {
 		if header := bc.GetHeaderByHash(head); header != nil {
@@ -237,6 +253,7 @@ func (bc *BlockChain) loadLastState() error {
 	bc.hc.SetCurrentHeader(currentHeader)
 
 	// Restore the last known head fast block
+	// 设置current fast block
 	bc.currentFastBlock.Store(currentBlock)
 	if head := rawdb.ReadHeadFastBlockHash(bc.db); head != (common.Hash{}) {
 		if block := bc.GetBlockByHash(head); block != nil {
@@ -349,6 +366,7 @@ func (bc *BlockChain) CurrentFastBlock() *types.Block {
 }
 
 // SetProcessor sets the processor required for making state modifications.
+// SetProcessor设置了用于进行state modifications的processor
 func (bc *BlockChain) SetProcessor(processor Processor) {
 	bc.procmu.Lock()
 	defer bc.procmu.Unlock()
@@ -356,6 +374,7 @@ func (bc *BlockChain) SetProcessor(processor Processor) {
 }
 
 // SetValidator sets the validator which is used to validate incoming blocks.
+// SetValidator对validator进行设置，它用来对incoming blocks进行验证
 func (bc *BlockChain) SetValidator(validator Validator) {
 	bc.procmu.Lock()
 	defer bc.procmu.Unlock()
@@ -387,6 +406,7 @@ func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 }
 
 // Reset purges the entire blockchain, restoring it to its genesis state.
+// Reset擦除整个blockchain，并且将它重置到genesis state
 func (bc *BlockChain) Reset() error {
 	return bc.ResetWithGenesisBlock(bc.genesisBlock)
 }
@@ -687,6 +707,7 @@ func (bc *BlockChain) Stop() {
 
 func (bc *BlockChain) procFutureBlocks() {
 	blocks := make([]*types.Block, 0, bc.futureBlocks.Len())
+	// 遍历futureBlocks中的各个keys
 	for _, hash := range bc.futureBlocks.Keys() {
 		if block, exist := bc.futureBlocks.Peek(hash); exist {
 			blocks = append(blocks, block.(*types.Block))
@@ -696,6 +717,7 @@ func (bc *BlockChain) procFutureBlocks() {
 		types.BlockBy(types.Number).Sort(blocks)
 
 		// Insert one by one as chain insertion needs contiguous ancestry between blocks
+		// 一个一个地插入，因为chain insertion需要在blocks之间有连续的祖先关系
 		for i := range blocks {
 			bc.InsertChain(blocks[i : i+1])
 		}
@@ -997,8 +1019,11 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
 // chain or, otherwise, create a fork. If an error is returned it will return
 // the index number of the failing block as well an error describing what went
 // wrong.
+// InsertChain尝试将一批blocks插入canonical chain，或者，创建一个fork
+// 如果返回了一个error，它会返回failing block的index number以及一个error描述发生了什么错误
 //
 // After insertion is done, all accumulated events will be fired.
+// 当插入完成以后，所有累计的events都会爆发
 func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 	n, events, logs, err := bc.insertChain(chain)
 	bc.PostChainEvents(events, logs)
@@ -1008,12 +1033,16 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 // insertChain will execute the actual chain insertion and event aggregation. The
 // only reason this method exists as a separate one is to make locking cleaner
 // with deferred statements.
+// insertChain会执行真正的chain insertion以及event aggregation
+// 将它作为一个独立函数的唯一原因是让锁的执行更加清晰
 func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*types.Log, error) {
 	// Sanity check that we have something meaningful to import
+	// 完整性检查，保证我们的确有东西需要插入
 	if len(chain) == 0 {
 		return 0, nil, nil, nil
 	}
 	// Do a sanity check that the provided chain is actually ordered and linked
+	// 进行完整性检查，确保提供的chain都是有序的以及互连的
 	for i := 1; i < len(chain); i++ {
 		if chain[i].NumberU64() != chain[i-1].NumberU64()+1 || chain[i].ParentHash() != chain[i-1].Hash() {
 			// Chain broke ancestry, log a message (programming error) and skip insertion
@@ -1034,6 +1063,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 	// A queued approach to delivering events. This is generally
 	// faster than direct delivery and requires much less mutex
 	// acquiring.
+	// 一个队列用于发送events，这通常比直接发送更快并且需要更少的mutex
 	var (
 		stats         = insertStats{startTime: mclock.Now()}
 		events        = make([]interface{}, 0, len(chain))
@@ -1041,6 +1071,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		coalescedLogs []*types.Log
 	)
 	// Start the parallel header verifier
+	// 启动并行的header检测
 	headers := make([]*types.Header, len(chain))
 	seals := make([]bool, len(chain))
 
@@ -1055,6 +1086,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 	senderCacher.recoverFromBlocks(types.MakeSigner(bc.chainConfig, chain[0].Number()), chain)
 
 	// Iterate over the blocks and insert when the verifier permits
+	// 遍历blocks并且在verifier允许的情况下insert
 	for i, block := range chain {
 		// If the chain is terminating, stop processing blocks
 		if atomic.LoadInt32(&bc.procInterrupt) == 1 {
@@ -1067,10 +1099,12 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 			return i, events, coalescedLogs, ErrBlacklistedHash
 		}
 		// Wait for the block's verification to complete
+		// 等待block的verification完成
 		bstart := time.Now()
 
 		err := <-results
 		if err == nil {
+			// 对block的body进行检测
 			err = bc.Validator().ValidateBody(block)
 		}
 		switch {
@@ -1137,6 +1171,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		}
 		// Create a new statedb using the parent block and report an
 		// error if it fails.
+		// 使用parent block创建一个新的statedb并且在出现错误的时候报告error
 		var parent *types.Block
 		if i == 0 {
 			parent = bc.GetBlock(block.ParentHash(), block.NumberU64()-1)
@@ -1148,12 +1183,14 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 			return i, events, coalescedLogs, err
 		}
 		// Process block using the parent state as reference point.
+		// 用parent state对block进行处理
 		receipts, logs, usedGas, err := bc.processor.Process(block, state, bc.vmConfig)
 		if err != nil {
 			bc.reportBlock(block, receipts, err)
 			return i, events, coalescedLogs, err
 		}
 		// Validate the state using the default validator
+		// 用默认的validator对state进行检测
 		err = bc.Validator().ValidateState(block, parent, state, receipts, usedGas)
 		if err != nil {
 			bc.reportBlock(block, receipts, err)
@@ -1162,6 +1199,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		proctime := time.Since(bstart)
 
 		// Write the block to the chain and get the status.
+		// 将block写入chain并且获取status
 		status, err := bc.WriteBlockWithState(block, receipts, state)
 		if err != nil {
 			return i, events, coalescedLogs, err
@@ -1391,6 +1429,7 @@ func (bc *BlockChain) update() {
 	defer futureTimer.Stop()
 	for {
 		select {
+		// 每隔5秒做一次处理
 		case <-futureTimer.C:
 			bc.procFutureBlocks()
 		case <-bc.quit:
@@ -1497,6 +1536,8 @@ func (bc *BlockChain) CurrentHeader() *types.Header {
 
 // GetTd retrieves a block's total difficulty in the canonical chain from the
 // database by hash and number, caching it if found.
+// GetTd通过hash以及number从数据库中获取一个block的total difficulty在canonical chain里
+// 找到的话，对它进行缓存
 func (bc *BlockChain) GetTd(hash common.Hash, number uint64) *big.Int {
 	return bc.hc.GetTd(hash, number)
 }

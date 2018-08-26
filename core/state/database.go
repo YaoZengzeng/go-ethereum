@@ -75,6 +75,8 @@ type Trie interface {
 // concurrent use and retains cached trie nodes in memory. The pool is an optional
 // intermediate trie-node memory pool between the low level storage layer and the
 // high level trie abstraction.
+// NewDatabase创建一个后端用于存储state，返回的database对于并行的使用以及从内存中返回缓存的trie nodes
+// 都是安全的，这个pool是一个可选的中间层的trie-node内存缓存池，在底层的存储和高层的trie抽象层之间
 func NewDatabase(db ethdb.Database) Database {
 	csc, _ := lru.New(codeSizeCacheSize)
 	return &cachingDB{

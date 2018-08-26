@@ -25,22 +25,29 @@ import (
 // Validator is an interface which defines the standard for block validation. It
 // is only responsible for validating block contents, as the header validation is
 // done by the specific consensus engines.
+// Validator是一个接口定义了block validation的标准
+// 它只负责校验block contents，因为header validation是由特定的consensus engines完成的
 //
 type Validator interface {
 	// ValidateBody validates the given block's content.
+	// ValidateBody校验给定的block的内容
 	ValidateBody(block *types.Block) error
 
 	// ValidateState validates the given statedb and optionally the receipts and
 	// gas used.
+	// ValidateState校验给定的statedb，以及receipts和gas used是可选的
 	ValidateState(block, parent *types.Block, state *state.StateDB, receipts types.Receipts, usedGas uint64) error
 }
 
 // Processor is an interface for processing blocks using a given initial state.
+// Processor是一个接口，用给定的initial state处理blocks
 //
 // Process takes the block to be processed and the statedb upon which the
 // initial state is based. It should return the receipts generated, amount
 // of gas used in the process and return an error if any of the internal rules
 // failed.
+// Process接收一个要被处理的block以及statedb（initial state就基于此）
+// 它返回产生的receipts，process中使用的gas以及返回的error，如果违反了任何的internal rules
 type Processor interface {
 	Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error)
 }

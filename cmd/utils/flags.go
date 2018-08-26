@@ -334,6 +334,7 @@ var (
 	}
 	GasPriceFlag = BigFlag{
 		Name:  "gasprice",
+		// mining一个transaction最小能接受的gas price
 		Usage: "Minimal gas price to accept for mining a transactions",
 		Value: eth.DefaultConfig.GasPrice,
 	}
@@ -1160,6 +1161,8 @@ func SetDashboardConfig(ctx *cli.Context, cfg *dashboard.Config) {
 }
 
 // RegisterEthService adds an Ethereum client to the stack.
+// RegisterEthService将一个Ethereum client加入stack
+// 即注册Ethereum service
 func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 	var err error
 	if cfg.SyncMode == downloader.LightSync {
@@ -1168,6 +1171,7 @@ func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 		})
 	} else {
 		err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+			// 创建full node
 			fullNode, err := eth.New(ctx, cfg)
 			if fullNode != nil && cfg.LightServ > 0 {
 				ls, _ := les.NewLesServer(fullNode, cfg)

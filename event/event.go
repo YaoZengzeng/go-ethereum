@@ -34,6 +34,8 @@ type TypeMuxEvent struct {
 // A TypeMux dispatches events to registered receivers. Receivers can be
 // registered to handle events of certain type. Any operation
 // called after mux is stopped will return ErrMuxClosed.
+// TypeMux用于将事件分发到registered receivers
+// Receivers可以注册用于处理特定类型的events
 //
 // The zero value is ready to use.
 //
@@ -50,6 +52,8 @@ var ErrMuxClosed = errors.New("event: mux closed")
 // Subscribe creates a subscription for events of the given types. The
 // subscription's channel is closed when it is unsubscribed
 // or the mux is closed.
+// Subscribe对给定类型的events进行了subscription
+// subscription的channle会被关闭，当它被unsubscribed或者mux被关闭
 func (mux *TypeMux) Subscribe(types ...interface{}) *TypeMuxSubscription {
 	sub := newsub(mux)
 	mux.mutex.Lock()

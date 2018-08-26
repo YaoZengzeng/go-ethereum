@@ -35,6 +35,7 @@ import (
 )
 
 // Backend wraps all methods required for mining.
+// Backend对所有mining需要的方法进行了封装
 type Backend interface {
 	AccountManager() *accounts.Manager
 	BlockChain() *core.BlockChain
@@ -43,6 +44,7 @@ type Backend interface {
 }
 
 // Miner creates blocks and searches for proof-of-work values.
+// Miner创建blocks并且寻找pow值
 type Miner struct {
 	mux      *event.TypeMux
 	worker   *worker
@@ -50,7 +52,9 @@ type Miner struct {
 	eth      Backend
 	engine   consensus.Engine
 
+	// canStart表示我们是否能够开始mining
 	canStart    int32 // can start indicates whether we can start the mining operation
+	// shouldStart表示我们是否需要在sync之后启动
 	shouldStart int32 // should start indicates whether we should start after sync
 }
 
@@ -59,6 +63,7 @@ func New(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 		eth:      eth,
 		mux:      mux,
 		engine:   engine,
+		// 创建新的worker
 		worker:   newWorker(config, engine, eth, mux),
 		canStart: 1,
 	}
@@ -72,7 +77,10 @@ func New(eth Backend, config *params.ChainConfig, mux *event.TypeMux, engine con
 // It's entered once and as soon as `Done` or `Failed` has been broadcasted the events are unregistered and
 // the loop is exited. This to prevent a major security vuln where external parties can DOS you with blocks
 // and halt your mining operation for as long as the DOS continues.
+// update对downloader events进行追踪，需要注意的是这是一次性的update loop
+// 该函数只进入一次并且一旦`Done`或者`Failed`被广播，循环就退出了
 func (self *Miner) update() {
+	// 从mux订阅StartEvent，DoneEvent和FailedEvent
 	events := self.mux.Subscribe(downloader.StartEvent{}, downloader.DoneEvent{}, downloader.FailedEvent{})
 out:
 	for ev := range events.Chan() {
@@ -108,6 +116,7 @@ func (self *Miner) Start(coinbase common.Address) {
 		log.Info("Network syncing, will start miner afterwards")
 		return
 	}
+	// 启动worker
 	self.worker.start()
 	self.worker.commitNewWork()
 }
@@ -140,6 +149,7 @@ func (self *Miner) SetExtra(extra []byte) error {
 	if uint64(len(extra)) > params.MaximumExtraDataSize {
 		return fmt.Errorf("Extra exceeds max length. %d > %v", len(extra), params.MaximumExtraDataSize)
 	}
+	// 设置worker的extra data
 	self.worker.setExtra(extra)
 	return nil
 }

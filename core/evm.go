@@ -36,6 +36,7 @@ type ChainContext interface {
 }
 
 // NewEVMContext creates a new context for use in the EVM.
+// NewEVMContext创建一个新的context在EVM中使用
 func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author *common.Address) vm.Context {
 	// If we don't have an explicit author (i.e. not mining), extract from the header
 	var beneficiary common.Address
@@ -86,11 +87,14 @@ func GetHashFn(ref *types.Header, chain ChainContext) func(n uint64) common.Hash
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.
 // This does not take the necessary gas in to account to make the transfer valid.
+// CanTransfer检查一个地址的account是否有足够的funds用于传输
+// 其中不考虑必须的gas用于保证传输的合法
 func CanTransfer(db vm.StateDB, addr common.Address, amount *big.Int) bool {
 	return db.GetBalance(addr).Cmp(amount) >= 0
 }
 
 // Transfer subtracts amount from sender and adds amount to recipient using the given Db
+// Transfer使用给定的DB从sender减小amount并且在recipient加上amount
 func Transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int) {
 	db.SubBalance(sender, amount)
 	db.AddBalance(recipient, amount)

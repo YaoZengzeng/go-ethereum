@@ -94,6 +94,8 @@ func (s *StructLog) ErrorString() string {
 // Tracer is used to collect execution traces from an EVM transaction
 // execution. CaptureState is called for each step of the VM with the
 // current VM state.
+// Tracer用于从一个EVM transaction的执行过程收集执行痕迹
+// VM执行每一步都会执行CaptureState，伴随着当前的VM state
 // Note that reference types are actual VM data structures; make copies
 // if you need to retain them beyond the current call.
 type Tracer interface {

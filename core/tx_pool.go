@@ -122,6 +122,7 @@ type blockChain interface {
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
+// TxPoolConfig是transaction pool的配置参数
 type TxPoolConfig struct {
 	NoLocals  bool          // Whether local transaction handling should be disabled
 	Journal   string        // Journal of local transactions to survive node restarts
@@ -140,6 +141,7 @@ type TxPoolConfig struct {
 
 // DefaultTxPoolConfig contains the default configurations for the transaction
 // pool.
+// DefaultTxPoolConfig包含了对于transaction pool的默认配置
 var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
@@ -177,10 +179,14 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 // TxPool contains all currently known transactions. Transactions
 // enter the pool when they are received from the network or submitted
 // locally. They exit the pool when they are included in the blockchain.
+// TxPool包含了所有当前已知的transactions，当transactions从网络中接收到或者由本地
+// 提交时，它们就会被放入pool，当它们被放入blockchain之后，它们就会退出pool
 //
 // The pool separates processable transactions (which can be applied to the
 // current state) and future transactions. Transactions move between those
 // two states over time as they are received and processed.
+// pool将正在处理的transactions和未来的transactions分开，随着transaction被接收和处理
+// 它们在这两种状态之间进行移动
 type TxPool struct {
 	config       TxPoolConfig
 	chainconfig  *params.ChainConfig
@@ -213,6 +219,7 @@ type TxPool struct {
 
 // NewTxPool creates a new transaction pool to gather, sort and filter inbound
 // transactions from the network.
+// NewTxPool创建一个新的transaction pool用于收集，排序以及过滤从network中获取的transactions
 func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain blockChain) *TxPool {
 	// Sanitize the input to ensure no vulnerable gas prices are set
 	config = (&config).sanitize()
@@ -452,6 +459,7 @@ func (pool *TxPool) SubscribeNewTxsEvent(ch chan<- NewTxsEvent) event.Subscripti
 }
 
 // GasPrice returns the current gas price enforced by the transaction pool.
+// GasPrice返回trasaction pool要求的当前的gas price
 func (pool *TxPool) GasPrice() *big.Int {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
@@ -552,6 +560,8 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
+// validateTx检查一个transaction是否合法，根据consensus rules以及一些本地节点的启发式限制
+// 例如（price和size）
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// Heuristic limit, reject transactions over 32KB to prevent DOS attacks
 	if tx.Size() > 32*1024 {
@@ -572,6 +582,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrInvalidSender
 	}
 	// Drop non-local transactions under our own minimal accepted gas price
+	// 丢弃那些non-local transactions，如果它们低于我们最小能接受的gas price
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
 	if !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {
 		return ErrUnderpriced

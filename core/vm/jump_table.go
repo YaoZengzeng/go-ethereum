@@ -44,6 +44,7 @@ type operation struct {
 
 	halts   bool // indicates whether the operation should halt further execution
 	jumps   bool // indicates whether the program counter should not increment
+	// writes决定这是否是一个修改state的操作
 	writes  bool // determines whether this a state modifying operation
 	valid   bool // indication whether the retrieved operation is valid and known
 	reverts bool // determines whether the operation reverts state (implicitly halts)

@@ -49,8 +49,12 @@ var (
 // nested states. It's the general query interface to retrieve:
 // * Contracts
 // * Accounts
+// StateDBs在ethereum protocol是用来存储任何位于merkel trie中的东西
+// StateDbs负责获取以及存储nested states
+// 它是一个通用的查询接口，用于获取：Contracts以及Accounts
 type StateDB struct {
 	db   Database
+	// trie树
 	trie Trie
 
 	// This map holds 'live' objects, which will get modified while processing a state transition.
@@ -84,6 +88,7 @@ type StateDB struct {
 }
 
 // Create a new state from a given trie.
+// New根据给定的trie创建一个新的state
 func New(root common.Hash, db Database) (*StateDB, error) {
 	tr, err := db.OpenTrie(root)
 	if err != nil {
@@ -415,6 +420,7 @@ func (self *StateDB) createObject(addr common.Address) (newobj, prev *stateObjec
 
 // CreateAccount explicitly creates a state object. If a state object with the address
 // already exists the balance is carried over to the new account.
+// CreateAccount显式地创建一个state对象，如果该地址的state对象已经存在了，则余额会被转移到新的account
 //
 // CreateAccount is called during the EVM CREATE operation. The situation might arise that
 // a contract does the following:
@@ -559,6 +565,7 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 // IntermediateRoot computes the current root hash of the state trie.
 // It is called in between transactions to get the root hash that
 // goes into transaction receipts.
+// IntermediateRoot计算state trie当前的root hash
 func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 	s.Finalise(deleteEmptyObjects)
 	return s.trie.Hash()
@@ -566,6 +573,8 @@ func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 
 // Prepare sets the current transaction hash and index and block hash which is
 // used when the EVM emits new state logs.
+// Prepare设置current transactions hash以及index和bloch hash
+// 它们会在EVM emits新的state logs被使用
 func (self *StateDB) Prepare(thash, bhash common.Hash, ti int) {
 	self.thash = thash
 	self.bhash = bhash

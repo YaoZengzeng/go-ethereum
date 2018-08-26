@@ -27,6 +27,7 @@ import (
 type CpuAgent struct {
 	mu sync.Mutex
 
+	// 接收mining task的通道
 	taskCh        chan *Package
 	returnCh      chan<- *Package
 	stop          chan struct{}
@@ -53,6 +54,7 @@ func (self *CpuAgent) AssignTask(p *Package) {
 		self.taskCh <- p
 	}
 }
+// 对returnCh进行赋值
 func (self *CpuAgent) DeliverTo(ch chan<- *Package) { self.returnCh = ch }
 
 func (self *CpuAgent) Start() {
@@ -70,6 +72,7 @@ func (self *CpuAgent) Stop() {
 done:
 	// Empty work channel
 	for {
+		// 清空task channel
 		select {
 		case <-self.taskCh:
 		default:
@@ -85,9 +88,11 @@ out:
 		case p := <-self.taskCh:
 			self.mu.Lock()
 			if self.quitCurrentOp != nil {
+				// 当接收了新的task之后，就触发关闭之前task的quitCurrentOp
 				close(self.quitCurrentOp)
 			}
 			self.quitCurrentOp = make(chan struct{})
+			// 进行mining
 			go self.mine(p, self.quitCurrentOp)
 			self.mu.Unlock()
 		case <-self.stop:
@@ -106,11 +111,13 @@ func (self *CpuAgent) mine(p *Package, stop <-chan struct{}) {
 	var err error
 	if p.Block, err = self.engine.Seal(self.chain, p.Block, stop); p.Block != nil {
 		log.Info("Successfully sealed new block", "number", p.Block.Number(), "hash", p.Block.Hash())
+		// 成功挖到新的block并返回
 		self.returnCh <- p
 	} else {
 		if err != nil {
 			log.Warn("Block sealing failed", "err", err)
 		}
+		// 挖矿失败，则返回给returnCh一个nil
 		self.returnCh <- nil
 	}
 }

@@ -23,6 +23,7 @@ import (
 )
 
 // ContractRef is a reference to the contract's backing object
+// ContractRef是对于contract的后端对象的引用
 type ContractRef interface {
 	Address() common.Address
 }
@@ -41,6 +42,8 @@ func (ar AccountRef) Address() common.Address { return (common.Address)(ar) }
 
 // Contract represents an ethereum contract in the state database. It contains
 // the the contract code, calling arguments. Contract implements ContractRef
+// Contract代表了state database中的一个ethereum contract
+// 它包含了contract code，调用参数，Contract实现了ContractRef
 type Contract struct {
 	// CallerAddress is the result of the caller which initialised this
 	// contract. However when the "call method" is delegated this value
@@ -65,6 +68,7 @@ type Contract struct {
 }
 
 // NewContract returns a new contract environment for the execution of EVM.
+// NewContract返回一个新的contract environment用于EVM的执行
 func NewContract(caller ContractRef, object ContractRef, value *big.Int, gas uint64) *Contract {
 	c := &Contract{CallerAddress: caller.Address(), caller: caller, self: object, Args: nil}
 
@@ -146,6 +150,7 @@ func (c *Contract) SetCode(hash common.Hash, code []byte) {
 
 // SetCallCode sets the code of the contract and address of the backing data
 // object
+// SetCallCode设置contract的code以及后端数据对象的地址
 func (c *Contract) SetCallCode(addr *common.Address, hash common.Hash, code []byte) {
 	c.Code = code
 	c.CodeHash = hash

@@ -47,6 +47,7 @@ type txdata struct {
 	AccountNonce uint64          `json:"nonce"    gencodec:"required"`
 	Price        *big.Int        `json:"gasPrice" gencodec:"required"`
 	GasLimit     uint64          `json:"gas"      gencodec:"required"`
+	// 当Recipient为nil表示创建contract
 	Recipient    *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
 	Amount       *big.Int        `json:"value"    gencodec:"required"`
 	Payload      []byte          `json:"input"    gencodec:"required"`
@@ -324,6 +325,8 @@ type TransactionsByPriceAndNonce struct {
 
 // NewTransactionsByPriceAndNonce creates a transaction set that can retrieve
 // price sorted transactions in a nonce-honouring way.
+// NewTransactionsByPriceAndNonce创建一个transaction set，以nonce-honouring way的
+// 按price排序的transactions
 //
 // Note, the input map is reowned so the caller should not interact any more with
 // if after providing it to the constructor.
@@ -376,6 +379,7 @@ func (t *TransactionsByPriceAndNonce) Pop() {
 }
 
 // Message is a fully derived transaction and implements core.Message
+// Message是一个完整的derived transaction并且实现了core.Message
 //
 // NOTE: In a future PR this will be removed.
 type Message struct {

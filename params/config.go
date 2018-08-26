@@ -97,6 +97,7 @@ var (
 )
 
 // ChainConfig is the core config which determines the blockchain settings.
+// ChainConfig是决定blockchain设置的核心配置
 //
 // ChainConfig is stored in the database on a per block basis. This means
 // that any network, identified by its genesis block, can have its own
@@ -120,6 +121,7 @@ type ChainConfig struct {
 	ConstantinopleBlock *big.Int `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
 
 	// Various consensus engines
+	// 各种共识引擎
 	Ethash *EthashConfig `json:"ethash,omitempty"`
 	Clique *CliqueConfig `json:"clique,omitempty"`
 }

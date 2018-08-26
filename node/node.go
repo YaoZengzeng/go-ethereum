@@ -37,6 +37,7 @@ import (
 )
 
 // Node is a container on which services can be registered.
+// Node是一个用于注册服务的容器
 type Node struct {
 	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
 	config   *Config
@@ -509,6 +510,7 @@ func (n *Node) Server() *p2p.Server {
 }
 
 // Service retrieves a currently running service registered of a specific type.
+// Service获取一个正在运行的service，以特定的类型注册
 func (n *Node) Service(service interface{}) error {
 	n.lock.RLock()
 	defer n.lock.RUnlock()
@@ -518,6 +520,7 @@ func (n *Node) Service(service interface{}) error {
 		return ErrNodeStopped
 	}
 	// Otherwise try to find the service to return
+	// 返回找到的service
 	element := reflect.ValueOf(service).Elem()
 	if running, ok := n.services[element.Type()]; ok {
 		element.Set(reflect.ValueOf(running))

@@ -24,6 +24,7 @@ import (
 )
 
 // Memory implements a simple memory model for the ethereum virtual machine.
+// Memory为EVM实现了一个简答的内存模型
 type Memory struct {
 	store       []byte
 	lastGasCost uint64

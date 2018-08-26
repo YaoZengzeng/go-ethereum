@@ -28,6 +28,7 @@ import (
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
+// ReadCanonicalHash获取赋值给一个canonical block number的hash
 func ReadCanonicalHash(db DatabaseReader, number uint64) common.Hash {
 	data, _ := db.Get(headerHashKey(number))
 	if len(data) == 0 {
@@ -77,6 +78,7 @@ func WriteHeadHeaderHash(db DatabaseWriter, hash common.Hash) {
 }
 
 // ReadHeadBlockHash retrieves the hash of the current canonical head block.
+// ReadHeadBlockHash取回当前的canonical head block的hash
 func ReadHeadBlockHash(db DatabaseReader) common.Hash {
 	data, _ := db.Get(headBlockKey)
 	if len(data) == 0 {

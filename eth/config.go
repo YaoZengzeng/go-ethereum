@@ -34,6 +34,7 @@ import (
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.
+// DefaultConfig包含了用于Ethereum main net的默认配置
 var DefaultConfig = Config{
 	SyncMode: downloader.FastSync,
 	Ethash: ethash.Config{
@@ -76,9 +77,12 @@ func init() {
 type Config struct {
 	// The genesis block, which is inserted if the database is empty.
 	// If nil, the Ethereum main net block is used.
+	// genesis block的配置，如果数据库为空的话，就会被插入
+	// 如果为nil，则Ethereum main net block就会被使用
 	Genesis *core.Genesis `toml:",omitempty"`
 
 	// Protocol options
+	// NetworkId用于选择连接的peers
 	NetworkId uint64 // Network ID to use for selecting peers to connect to
 	SyncMode  downloader.SyncMode
 	NoPruning bool

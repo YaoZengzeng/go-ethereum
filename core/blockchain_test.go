@@ -45,6 +45,8 @@ var (
 // newCanonical creates a chain database, and injects a deterministic canonical
 // chain. Depending on the full flag, if creates either a full block chain or a
 // header only chain.
+// newCanonical创建一个chain database，并且插入一个确定性的canonical chain
+// 根据full的值，创建一个完整的block chain或者header only chain
 func newCanonical(engine consensus.Engine, n int, full bool) (ethdb.Database, *BlockChain, error) {
 	var (
 		db      = ethdb.NewMemDatabase()
@@ -52,6 +54,7 @@ func newCanonical(engine consensus.Engine, n int, full bool) (ethdb.Database, *B
 	)
 
 	// Initialize a fresh chain with only a genesis block
+	// 创建一个新的chain，只有genesis block
 	blockchain, _ := NewBlockChain(db, nil, params.AllEthashProtocolChanges, engine, vm.Config{})
 	// Create and inject the requested chain
 	if n == 0 {
@@ -59,11 +62,13 @@ func newCanonical(engine consensus.Engine, n int, full bool) (ethdb.Database, *B
 	}
 	if full {
 		// Full block-chain requested
+		// 创建完整的block-chain
 		blocks := makeBlockChain(genesis, n, engine, db, canonicalSeed)
 		_, err := blockchain.InsertChain(blocks)
 		return db, blockchain, err
 	}
 	// Header-only chain requested
+	// 创建head-only chain
 	headers := makeHeaderChain(genesis.Header(), n, engine, db, canonicalSeed)
 	_, err := blockchain.InsertHeaderChain(headers, 1)
 	return db, blockchain, err
