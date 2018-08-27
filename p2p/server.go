@@ -55,6 +55,7 @@ const (
 var errServerStopped = errors.New("server stopped")
 
 // Config holds Server options.
+// Config包含了p2p sever的配置选项
 type Config struct {
 	// This field must be set to a valid secp256k1 private key.
 	PrivateKey *ecdsa.PrivateKey `toml:"-"`
@@ -75,10 +76,12 @@ type Config struct {
 
 	// NoDiscovery can be used to disable the peer discovery mechanism.
 	// Disabling is useful for protocol debugging (manual topology).
+	// NoDiscovery可以用于禁止peer discovery机制
 	NoDiscovery bool
 
 	// DiscoveryV5 specifies whether the the new topic-discovery based V5 discovery
 	// protocol should be started or not.
+	// DiscoveryV5指定是否启动新的基于topic-discover的V5发现协议
 	DiscoveryV5 bool `toml:",omitempty"`
 
 	// Name sets the node name of this server.
@@ -96,19 +99,23 @@ type Config struct {
 
 	// Static nodes are used as pre-configured connections which are always
 	// maintained and re-connected on disconnects.
+	// Static nodes是提前配置的连接，它总是被维护的并且在断开连接的时候重连
 	StaticNodes []*discover.Node
 
 	// Trusted nodes are used as pre-configured connections which are always
 	// allowed to connect, even above the peer limit.
+	// Trusted nodes是提前配置的连接，即使超过了peer limit，也允许连接
 	TrustedNodes []*discover.Node
 
 	// Connectivity can be restricted to certain IP networks.
 	// If this option is set to a non-nil value, only hosts which match one of the
 	// IP networks contained in the list are considered.
+	// Connectivity可以被限制在指定的IP network中
 	NetRestrict *netutil.Netlist `toml:",omitempty"`
 
 	// NodeDatabase is the path to the database containing the previously seen
 	// live nodes in the network.
+	// NodeDatabase是存有之前可见的network中的live nodes的数据库的路径
 	NodeDatabase string `toml:",omitempty"`
 
 	// Protocols should contain the protocols supported
@@ -122,6 +129,9 @@ type Config struct {
 	// If the port is zero, the operating system will pick a port. The
 	// ListenAddr field will be updated with the actual address when
 	// the server is started.
+	// 如果ListenAddr是一个non-nil的地址，则server使用它来监听incoming connections
+	// 如果port为0，则OS会选择一个port
+	// ListenAddr会在server启动时用actual address进行更新
 	ListenAddr string
 
 	// If set to a non-nil value, the given NAT port mapper
@@ -134,6 +144,7 @@ type Config struct {
 	Dialer NodeDialer `toml:"-"`
 
 	// If NoDial is true, the server will not dial any peers.
+	// 如果NoDial为true，则server不会dial任何peers
 	NoDial bool `toml:",omitempty"`
 
 	// If EnableMsgEvents is set then the server will emit PeerEvents
@@ -145,6 +156,7 @@ type Config struct {
 }
 
 // Server manages all peer connections.
+// Server管理所有的peer connections
 type Server struct {
 	// Config fields may not be modified while the server is running.
 	Config
@@ -168,6 +180,8 @@ type Server struct {
 	peerOpDone chan struct{}
 
 	quit          chan struct{}
+	// 通过addstatic, removestatic, addtrusted, removetrusted
+	// 中获取node信息
 	addstatic     chan *discover.Node
 	removestatic  chan *discover.Node
 	addtrusted    chan *discover.Node
@@ -304,6 +318,8 @@ func (srv *Server) PeerCount() int {
 // AddPeer connects to the given node and maintains the connection until the
 // server is shut down. If the connection fails for any reason, the server will
 // attempt to reconnect the peer.
+// AddPeer连接到给定的node并且维持连接直到server关闭
+// 如果连接因为某些原因fail了，则server会尝试重连peer
 func (srv *Server) AddPeer(node *discover.Node) {
 	select {
 	case srv.addstatic <- node:
@@ -418,6 +434,8 @@ func (s *sharedUDPConn) Close() error {
 
 // Start starts running the server.
 // Servers can not be re-used after stopping.
+// Start启动运行server
+// Servers在停止之后不能被重用
 func (srv *Server) Start() (err error) {
 	srv.lock.Lock()
 	defer srv.lock.Unlock()
@@ -460,6 +478,7 @@ func (srv *Server) Start() (err error) {
 	)
 
 	if !srv.NoDiscovery || srv.DiscoveryV5 {
+		// 用srv.ListenAddr解析出udp addr
 		addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
 		if err != nil {
 			return err
@@ -495,6 +514,7 @@ func (srv *Server) Start() (err error) {
 			Bootnodes:    srv.BootstrapNodes,
 			Unhandled:    unhandled,
 		}
+		// 创建node table
 		ntab, err := discover.ListenUDP(conn, cfg)
 		if err != nil {
 			return err
@@ -530,7 +550,9 @@ func (srv *Server) Start() (err error) {
 		srv.ourHandshake.Caps = append(srv.ourHandshake.Caps, p.cap())
 	}
 	// listen/dial
+	// 	启动listener
 	if srv.ListenAddr != "" {
+		// 启动listening
 		if err := srv.startListening(); err != nil {
 			return err
 		}
@@ -552,11 +574,13 @@ func (srv *Server) startListening() error {
 		return err
 	}
 	laddr := listener.Addr().(*net.TCPAddr)
+	// 修改srv.ListenAddr
 	srv.ListenAddr = laddr.String()
 	srv.listener = listener
 	srv.loopWG.Add(1)
 	go srv.listenLoop()
 	// Map the TCP listening port if NAT is configured.
+	// 如果配置了NAT，则映射tcp listening port
 	if !laddr.IP.IsLoopback() && srv.NAT != nil {
 		srv.loopWG.Add(1)
 		go func() {
@@ -586,6 +610,8 @@ func (srv *Server) run(dialstate dialer) {
 	)
 	// Put trusted nodes into a map to speed up checks.
 	// Trusted peers are loaded on startup or added via AddTrustedPeer RPC.
+	// Put将nodes加入一个map用于加速检查
+	// Trusted peers在启动的时候或者通过AddTrustedPeer RPC加载
 	for _, n := range srv.TrustedNodes {
 		trusted[n.ID] = true
 	}
@@ -600,6 +626,7 @@ func (srv *Server) run(dialstate dialer) {
 		}
 	}
 	// starts until max number of active tasks is satisfied
+	// 直到满足最大数目的active tasks
 	startTasks := func(ts []task) (rest []task) {
 		i := 0
 		for ; len(runningTasks) < maxActiveDialTasks && i < len(ts); i++ {
@@ -612,6 +639,7 @@ func (srv *Server) run(dialstate dialer) {
 	}
 	scheduleTasks := func() {
 		// Start from queue first.
+		// 先从queue中启动
 		queuedTasks = append(queuedTasks[:0], startTasks(queuedTasks)...)
 		// Query dialer for new tasks and start as many as possible now.
 		if len(runningTasks) < maxActiveDialTasks {
@@ -632,6 +660,8 @@ running:
 			// This channel is used by AddPeer to add to the
 			// ephemeral static peer list. Add it to the dialer,
 			// it will keep the node connected.
+			// 这个channel由AddPeer用于增加临时的static peer list
+			// 将它增加至dialer，并且保持node连接
 			srv.log.Trace("Adding static node", "node", n)
 			dialstate.addStatic(n)
 		case n := <-srv.removestatic:
@@ -649,6 +679,7 @@ running:
 			srv.log.Trace("Adding trusted node", "node", n)
 			trusted[n.ID] = true
 			// Mark any already-connected peer as trusted
+			// 将所有已经连接的peer设置为trusted
 			if p, ok := peers[n.ID]; ok {
 				p.rw.set(trustedConn, true)
 			}
@@ -671,6 +702,8 @@ running:
 			// A task got done. Tell dialstate about it so it
 			// can update its state and remove it from the active
 			// tasks list.
+			// 一个task结束了，通知dialstate，这样它就能更新state并且将其
+			// 从active tasks list中移除
 			srv.log.Trace("Dial task done", "task", t)
 			dialstate.taskDone(t, time.Now())
 			delTask(t)
@@ -795,6 +828,7 @@ type tempError interface {
 
 // listenLoop runs in its own goroutine and accepts
 // inbound connections.
+// listenLoop运行在自己的goroutine中用于接收inbound connections
 func (srv *Server) listenLoop() {
 	defer srv.loopWG.Done()
 	srv.log.Info("RLPx listener up", "self", srv.makeSelf(srv.listener, srv.ntab))

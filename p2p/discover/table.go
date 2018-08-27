@@ -107,6 +107,7 @@ func newTable(t transport, ourID NodeID, ourAddr *net.UDPAddr, nodeDBPath string
 	tab := &Table{
 		net:        t,
 		db:         db,
+		// 创建新的node，配置的ip，port都由参数ourAddr提供
 		self:       NewNode(ourID, ourAddr.IP, uint16(ourAddr.Port), uint16(ourAddr.Port)),
 		refreshReq: make(chan chan struct{}),
 		initDone:   make(chan struct{}),
@@ -202,6 +203,8 @@ func (tab *Table) Close() {
 // setFallbackNodes sets the initial points of contact. These nodes
 // are used to connect to the network if the table is empty and there
 // are no known nodes in the database.
+// setFallbackNodes设置contact的initial points
+// 这些nodes用于连接network，如果table是空或者在database中没有已知的nodes的话
 func (tab *Table) setFallbackNodes(nodes []*Node) error {
 	for _, n := range nodes {
 		if err := n.validateComplete(); err != nil {
@@ -214,6 +217,7 @@ func (tab *Table) setFallbackNodes(nodes []*Node) error {
 		// Recompute cpy.sha because the node might not have been
 		// created by NewNode or ParseNode.
 		cpy.sha = crypto.Keccak256Hash(n.ID[:])
+		// 将合法的bootnode加入tab.nursery中
 		tab.nursery = append(tab.nursery, &cpy)
 	}
 	return nil

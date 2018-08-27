@@ -44,6 +44,7 @@ var DefaultConfig = Config{
 	WSPort:           DefaultWSPort,
 	WSModules:        []string{"net", "web3"},
 	P2P: p2p.Config{
+		// Default config中也没有对IP地址进行指定
 		ListenAddr: ":30303",
 		MaxPeers:   25,
 		NAT:        nat.Any(),

@@ -99,6 +99,7 @@ type PeerEvent struct {
 }
 
 // Peer represents a connected remote node.
+// Peer代表一个已经连接的远程节点
 type Peer struct {
 	rw      *conn
 	running map[string]*protoRW

@@ -68,6 +68,7 @@ func (t TCPDialer) Dial(dest *discover.Node) (net.Conn, error) {
 // dialstate schedules dials and discovery lookups.
 // it get's a chance to compute new tasks on every iteration
 // of the main loop in Server.run.
+// dialstate对dials进行调度并且发现lookups
 type dialstate struct {
 	maxDynDials int
 	ntab        discoverTable
@@ -138,6 +139,7 @@ func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab disc
 		randomNodes: make([]*discover.Node, maxdyn/2),
 		hist:        new(dialHistory),
 	}
+	// 保存bootstrap nodes和static nodes
 	copy(s.bootnodes, bootnodes)
 	for _, n := range static {
 		s.addStatic(n)
@@ -148,6 +150,7 @@ func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab disc
 func (s *dialstate) addStatic(n *discover.Node) {
 	// This overwites the task instead of updating an existing
 	// entry, giving users the opportunity to force a resolve operation.
+	// 覆盖task而不是更新一个已经存在的entry
 	s.static[n.ID] = &dialTask{flags: staticDialedConn, dest: n}
 }
 

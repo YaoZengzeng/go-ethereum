@@ -40,6 +40,7 @@ const NodeIDBits = 512
 
 // Node represents a host on the network.
 // The fields of Node may not be modified.
+// Node代表了network里面的一个host
 type Node struct {
 	IP       net.IP // len 4 for IPv4 or 16 for IPv6
 	UDP, TCP uint16 // port numbers
@@ -58,6 +59,7 @@ type Node struct {
 
 // NewNode creates a new node. It is mostly meant to be used for
 // testing purposes.
+// NewNode创建一个新的node，主要用于测试目的
 func NewNode(id NodeID, ip net.IP, udpPort, tcpPort uint16) *Node {
 	if ipv4 := ip.To4(); ipv4 != nil {
 		ip = ipv4
@@ -76,6 +78,7 @@ func (n *Node) addr() *net.UDPAddr {
 }
 
 // Incomplete returns true for nodes with no IP address.
+// Incomplete返回true，如果nodes没有对外的IP的话
 func (n *Node) Incomplete() bool {
 	return n.IP == nil
 }
@@ -100,6 +103,7 @@ func (n *Node) validateComplete() error {
 
 // The string representation of a Node is a URL.
 // Please see ParseNode for a description of the format.
+// String方法将Node编码为一个URL
 func (n *Node) String() string {
 	u := url.URL{Scheme: "enode"}
 	if n.Incomplete() {
@@ -223,6 +227,8 @@ func (n *Node) UnmarshalText(text []byte) error {
 
 // NodeID is a unique identifier for each node.
 // The node identifier is a marshaled elliptic curve public key.
+// NodeID是每一个node独特的标识符
+// node identifier是一个marshaled elliptic curve public key.
 type NodeID [NodeIDBits / 8]byte
 
 // Bytes returns a byte slice representation of the NodeID

@@ -46,6 +46,7 @@ type Node struct {
 	ephemeralKeystore string         // if non-empty, the key directory that will be removed by Stop
 	instanceDirLock   flock.Releaser // prevents concurrent use of instance directory
 
+	// p2p server的配置，其实就是config.P2P
 	serverConfig p2p.Config
 	server       *p2p.Server // Currently running P2P networking layer
 
@@ -75,6 +76,7 @@ type Node struct {
 }
 
 // New creates a new P2P node, ready for protocol registration.
+// New创建一个新的P2P node，并且准备用于protocol registration
 func New(conf *Config) (*Node, error) {
 	// Copy config and resolve the datadir so future changes to the current
 	// working directory don't affect the node.
@@ -136,6 +138,7 @@ func (n *Node) Register(constructor ServiceConstructor) error {
 }
 
 // Start create a live P2P node and starts running it.
+// Start创建一个live P2P node并且开始运行它
 func (n *Node) Start() error {
 	n.lock.Lock()
 	defer n.lock.Unlock()
@@ -150,10 +153,12 @@ func (n *Node) Start() error {
 
 	// Initialize the p2p server. This creates the node key and
 	// discovery databases.
+	// 初始化p2p server，这会创建node key以及discovery database
 	n.serverConfig = n.config.P2P
 	n.serverConfig.PrivateKey = n.config.NodeKey()
 	n.serverConfig.Name = n.config.NodeName()
 	n.serverConfig.Logger = n.log
+	// 从config中加载static nodes，trusted nodes以及node db
 	if n.serverConfig.StaticNodes == nil {
 		n.serverConfig.StaticNodes = n.config.StaticNodes()
 	}
@@ -170,6 +175,7 @@ func (n *Node) Start() error {
 	services := make(map[reflect.Type]Service)
 	for _, constructor := range n.serviceFuncs {
 		// Create a new context for the particular service
+		// 为特定的service创建一个新的context
 		ctx := &ServiceContext{
 			config:         n.config,
 			services:       make(map[reflect.Type]Service),
@@ -194,10 +200,12 @@ func (n *Node) Start() error {
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
+	// 启动p2p server
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
 	// Start each of the services
+	// 启动各个services
 	started := []reflect.Type{}
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
@@ -213,6 +221,7 @@ func (n *Node) Start() error {
 		started = append(started, kind)
 	}
 	// Lastly start the configured RPC interfaces
+	// 最后启动配置好的RPC interfaces
 	if err := n.startRPC(services); err != nil {
 		for _, service := range services {
 			service.Stop()

@@ -47,6 +47,8 @@ const (
 // Config represents a small collection of configuration values to fine tune the
 // P2P network layer of a protocol stack. These values can be further extended by
 // all registered services.
+// Config代表了一个configuration values的小集合用于调整一个protocol stack中的P2P network layer
+// 这些值还可以根据所有registered services进行扩展	
 type Config struct {
 	// Name sets the instance name of the node. It must not contain the / character and is
 	// used in the devp2p node identifier. The instance name of geth is "geth". If no
@@ -336,6 +338,7 @@ func (c *Config) NodeKey() *ecdsa.PrivateKey {
 }
 
 // StaticNodes returns a list of node enode URLs configured as static nodes.
+// StaticNodes返回一系列的node enode URLs作为static nodes
 func (c *Config) StaticNodes() []*discover.Node {
 	return c.parsePersistentNodes(c.ResolvePath(datadirStaticNodes))
 }

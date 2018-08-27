@@ -455,6 +455,7 @@ var (
 	}
 	ListenPortFlag = cli.IntFlag{
 		Name:  "port",
+		// 默认的listen port为30303
 		Usage: "Network listening port",
 		Value: 30303,
 	}
@@ -898,6 +899,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 
 	if ctx.GlobalBool(DeveloperFlag.Name) {
 		// --dev mode can't use p2p networking.
+		// --dev mode不能使用p2p network
 		cfg.MaxPeers = 0
 		cfg.ListenAddr = ":0"
 		cfg.NoDiscovery = true
@@ -906,6 +908,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 }
 
 // SetNodeConfig applies node-related command line flags to the config.
+// SetNodeConfig将node相关的command line flag施加到config
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	SetP2PConfig(ctx, &cfg.P2P)
 	setIPC(ctx, cfg)

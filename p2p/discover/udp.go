@@ -155,6 +155,7 @@ type conn interface {
 }
 
 // udp implements the RPC protocol.
+// udp实现了RPC协议
 type udp struct {
 	conn        conn
 	netrestrict *netutil.Netlist
@@ -221,12 +222,15 @@ type Config struct {
 	// These settings are optional:
 	AnnounceAddr *net.UDPAddr      // local address announced in the DHT
 	NodeDBPath   string            // if set, the node database is stored at this filesystem location
+	// 白名单
 	NetRestrict  *netutil.Netlist  // network whitelist
+	// 一系列的Bootstrap nodes
 	Bootnodes    []*Node           // list of bootstrap nodes
 	Unhandled    chan<- ReadPacket // unhandled packets are sent on this channel
 }
 
 // ListenUDP returns a new table that listens for UDP packets on laddr.
+// ListenUDP返回一个新的table，用于监听laddr上的UDP packets
 func ListenUDP(c conn, cfg Config) (*Table, error) {
 	tab, _, err := newUDP(c, cfg)
 	if err != nil {
@@ -305,6 +309,7 @@ func (t *udp) waitping(from NodeID) error {
 
 // findnode sends a findnode request to the given node and waits until
 // the node has sent up to k neighbors.
+// findnode将findnode request发送给给定的node并且等待直到该node发送到k个neighbors
 func (t *udp) findnode(toid NodeID, toaddr *net.UDPAddr, target NodeID) ([]*Node, error) {
 	// If we haven't seen a ping from the destination node for a while, it won't remember
 	// our endpoint proof and reject findnode. Solicit a ping first.
