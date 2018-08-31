@@ -105,6 +105,7 @@ type inject struct {
 
 // Fetcher is responsible for accumulating block announcements from various peers
 // and scheduling them for retrieval.
+// Fetcher负责收集来自各个peer的block announcements并且调度它们用于retrieval
 type Fetcher struct {
 	// Various event channels
 	notify chan *announce

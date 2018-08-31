@@ -55,11 +55,16 @@ func (self Storage) Copy() Storage {
 }
 
 // stateObject represents an Ethereum account which is being modified.
+// stateObject代表了一个正在被修改的Ethereum account
 //
 // The usage pattern is as follows:
 // First you need to obtain a state object.
 // Account values can be accessed and modified through the object.
 // Finally, call CommitTrie to write the modified storage trie into a database.
+// 使用方式如下：
+// 首先需要获取一个state object
+// Account values可以通过这个object进行访问和修改
+// 最后，调用CommitTrie将修改后的storage trie写入数据库
 type stateObject struct {
 	address  common.Address
 	addrHash common.Hash // hash of ethereum address of the account

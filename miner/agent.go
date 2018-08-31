@@ -29,6 +29,7 @@ type CpuAgent struct {
 
 	// 接收mining task的通道
 	taskCh        chan *Package
+	// 将mining的结果通过returnCh发送出去
 	returnCh      chan<- *Package
 	stop          chan struct{}
 	quitCurrentOp chan struct{}
@@ -36,6 +37,7 @@ type CpuAgent struct {
 	chain  consensus.ChainReader
 	engine consensus.Engine
 
+	// started用于标记agent是否开启
 	started int32 // started indicates whether the agent is currently started
 }
 
@@ -109,6 +111,7 @@ out:
 
 func (self *CpuAgent) mine(p *Package, stop <-chan struct{}) {
 	var err error
+	// 调用consensus engine进行mining
 	if p.Block, err = self.engine.Seal(self.chain, p.Block, stop); p.Block != nil {
 		log.Info("Successfully sealed new block", "number", p.Block.Number(), "hash", p.Block.Hash())
 		// 成功挖到新的block并返回

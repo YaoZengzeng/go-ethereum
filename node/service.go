@@ -29,6 +29,9 @@ import (
 // ServiceContext is a collection of service independent options inherited from
 // the protocol stack, that is passed to all constructors to be optionally used;
 // as well as utility methods to operate on the service environment.
+// ServiceContext是一系列从protocol stack抽象而来的和具体service无关的配置选项
+// 它会被传输给所有的constructors并且被有选择的使用
+// 以及一系列的utility methods用于在service environment中操作
 type ServiceContext struct {
 	config         *Config
 	services       map[reflect.Type]Service // Index of the already constructed services
@@ -69,6 +72,7 @@ func (ctx *ServiceContext) Service(service interface{}) error {
 
 // ServiceConstructor is the function signature of the constructors needed to be
 // registered for service instantiation.
+// ServiceConstructor是constructors用于service的实例化
 type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 
 // Service is an individual protocol that can be registered into a node.
@@ -83,6 +87,7 @@ type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 // every time a service is started.
 type Service interface {
 	// Protocols retrieves the P2P protocols the service wishes to start.
+	// Protocols用于获取service希望启动的P2P protocols
 	Protocols() []p2p.Protocol
 
 	// APIs retrieves the list of RPC descriptors the service provides
@@ -90,9 +95,12 @@ type Service interface {
 
 	// Start is called after all services have been constructed and the networking
 	// layer was also initialized to spawn any goroutines required by the service.
+	// Start会在所有service都已构建完成并且networking layer同样已经初始化完成，可以用于创建
+	// service所需的goroutine之后
 	Start(server *p2p.Server) error
 
 	// Stop terminates all goroutines belonging to the service, blocking until they
 	// are all terminated.
+	// Stop用于终结所有属于这个service的goroutines，一直阻塞直到它们全部都终结
 	Stop() error
 }

@@ -58,6 +58,7 @@ func ReadChainConfig(db DatabaseReader, hash common.Hash) *params.ChainConfig {
 }
 
 // WriteChainConfig writes the chain config settings to the database.
+// WriteChainConfig将chain config设置写入database
 func WriteChainConfig(db DatabaseWriter, hash common.Hash, cfg *params.ChainConfig) {
 	if cfg == nil {
 		return

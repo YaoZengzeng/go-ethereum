@@ -37,6 +37,7 @@ type Config struct {
 	// NoRecursion禁止了Interpreter的call, callcode
 	NoRecursion bool
 	// Enable recording of SHA3/keccak preimages
+	// 使能对于SHA3/keccak preimages的recording
 	EnablePreimageRecording bool
 	// JumpTable contains the EVM instruction table. This
 	// may be left uninitialised and will be set to the default

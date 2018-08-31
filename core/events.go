@@ -46,6 +46,7 @@ type ChainEvent struct {
 	Logs  []*types.Log
 }
 
+// ChainSideEvent和ChainHeadEvent结构体内包含的都是Block
 type ChainSideEvent struct {
 	Block *types.Block
 }

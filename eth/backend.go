@@ -208,6 +208,7 @@ func makeExtraData(extra []byte) []byte {
 }
 
 // CreateDB creates the chain database.
+// CreateDB创建chain database
 func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ethdb.Database, error) {
 	db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
 	if err != nil {
@@ -403,6 +404,7 @@ func (s *Ethereum) Protocols() []p2p.Protocol {
 
 // Start implements node.Service, starting all internal goroutines needed by the
 // Ethereum protocol implementation.
+// Start实现了node.Service，启动Ethereum protocol实现所需的所有internal goroutines
 func (s *Ethereum) Start(srvr *p2p.Server) error {
 	// Start the bloom bits servicing goroutines
 	s.startBloomHandlers()
@@ -419,6 +421,7 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 		maxPeers -= s.config.LightPeers
 	}
 	// Start the networking layer and the light server if requested
+	// 启动网络层，以及light server，如果需要的话
 	s.protocolManager.Start(maxPeers)
 	if s.lesServer != nil {
 		s.lesServer.Start(srvr)

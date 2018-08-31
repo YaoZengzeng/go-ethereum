@@ -62,6 +62,7 @@ type DatabaseReader interface {
 // the disk database. The aim is to accumulate trie writes in-memory and only
 // periodically flush a couple tries to disk, garbage collecting the remainder.
 type Database struct {
+	// 对于成熟的trie nodes的固定化存储
 	diskdb ethdb.Database // Persistent storage for matured trie nodes
 
 	nodes  map[common.Hash]*cachedNode // Data and references relationships of a node
@@ -130,6 +131,7 @@ func (n rawShortNode) fstring(ind string) string     { panic("this should never 
 
 // cachedNode is all the information we know about a single cached node in the
 // memory database write layer.
+// cachedNode是在memory database写入层我们了解的单个cached node的全部信息
 type cachedNode struct {
 	node node   // Cached collapsed trie node, or raw rlp data
 	size uint16 // Byte size of the useful cached data
@@ -263,6 +265,8 @@ func expandNode(hash hashNode, n node, cachegen uint16) node {
 
 // NewDatabase creates a new trie database to store ephemeral trie content before
 // its written out to disk or garbage collected.
+// NewDatabase创建一个新的trie database用于存储暂时的trie content
+// 在它被写入磁盘或者被GC之前
 func NewDatabase(diskdb ethdb.Database) *Database {
 	return &Database{
 		diskdb:    diskdb,

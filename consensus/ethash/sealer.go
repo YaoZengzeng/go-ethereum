@@ -183,6 +183,7 @@ func (ethash *Ethash) remote() {
 	)
 
 	// getWork returns a work package for external miner.
+	// getWork为external miner返回一个work package
 	//
 	// The work package consists of 3 strings:
 	//   result[0], 32 bytes hex encoded current block header pow-hash
@@ -215,6 +216,7 @@ func (ethash *Ethash) remote() {
 	// 返回solution是否被接收
 	submitWork := func(nonce types.BlockNonce, mixDigest common.Hash, hash common.Hash) bool {
 		// Make sure the work submitted is present
+		// 确保提交的work存在
 		block := works[hash]
 		if block == nil {
 			log.Info("Work submitted but none pending", "hash", hash)
@@ -222,6 +224,7 @@ func (ethash *Ethash) remote() {
 		}
 
 		// Verify the correctness of submitted result.
+		// 确认提交的result的正确性
 		header := block.Header()
 		header.Nonce = nonce
 		header.MixDigest = mixDigest
@@ -237,6 +240,7 @@ func (ethash *Ethash) remote() {
 		}
 
 		// Solutions seems to be valid, return to the miner and notify acceptance.
+		// Solutions看起来是正确的，返回给miner并且通知acceptance
 		select {
 		case ethash.resultCh <- block.WithSeal(header):
 			delete(works, hash)
@@ -261,10 +265,13 @@ func (ethash *Ethash) remote() {
 			}
 			// Update current work with new received block.
 			// Note same work can be past twice, happens when changing CPU threads.
+			// 用最新收到的block更新当前的work
+			// 需要注意的是有些work可能在改变CPU threads的时候past twice
 			currentWork = block
 
 		case work := <-ethash.fetchWorkCh:
 			// Return current mining work to remote miner.
+			// 返回当前的mining work到remote miner
 			miningWork, err := getWork()
 			if err != nil {
 				work.errc <- err
@@ -274,6 +281,7 @@ func (ethash *Ethash) remote() {
 
 		case result := <-ethash.submitWorkCh:
 			// Verify submitted PoW solution based on maintained mining blocks.
+			// 基于维护的mining blocks验证提交的PoW solution
 			if submitWork(result.nonce, result.mixDigest, result.hash) {
 				result.errc <- nil
 			} else {

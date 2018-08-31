@@ -402,6 +402,7 @@ type mineResult struct {
 }
 
 // hashrate wraps the hash rate submitted by the remote sealer.
+// hashrate封装了remote sealer提交的hash rate
 type hashrate struct {
 	id   common.Hash
 	ping time.Time
@@ -422,6 +423,7 @@ type sealWork struct {
 type Ethash struct {
 	config Config
 
+	// 内存中的缓存，都用于避免regenrating too often
 	caches   *lru // In memory caches to avoid regenerating too often
 	datasets *lru // In memory datasets to avoid regenerating too often
 
@@ -433,9 +435,13 @@ type Ethash struct {
 	hashrate metrics.Meter // Meter tracking the average hashrate
 
 	// Remote sealer related fields
+	// 通过workCh将新的work推送到remote sealer
 	workCh       chan *types.Block // Notification channel to push new work to remote sealer
+	// resultCh是mining thread用于返回结果
 	resultCh     chan *types.Block // Channel used by mining threads to return result
+	// fetchWorkCh是用于remote sealer获取mining work
 	fetchWorkCh  chan *sealWork    // Channel used for remote sealer to fetch mining work
+	// submitWorkCh是remote sealer用于提交它们的mining result
 	submitWorkCh chan *mineResult  // Channel used for remote sealer to submit their mining result
 	fetchRateCh  chan chan uint64  // Channel used to gather submitted hash rate for local or remote sealer.
 	submitRateCh chan *hashrate    // Channel used for remote sealer to submit their mining hashrate

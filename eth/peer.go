@@ -398,6 +398,7 @@ func (p *peer) String() string {
 
 // peerSet represents the collection of active peers currently participating in
 // the Ethereum sub-protocol.
+// peerSet代表一系列当前加入Ethereum sub-protocol的active peers集合
 type peerSet struct {
 	peers  map[string]*peer
 	lock   sync.RWMutex

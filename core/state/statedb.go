@@ -58,6 +58,7 @@ type StateDB struct {
 	trie Trie
 
 	// This map holds 'live' objects, which will get modified while processing a state transition.
+	// 这个map用来存储'live' objects，当在处理一个state transition时会被修改
 	stateObjects      map[common.Address]*stateObject
 	stateObjectsDirty map[common.Address]struct{}
 
@@ -66,6 +67,8 @@ type StateDB struct {
 	// unable to deal with database-level errors. Any error that occurs
 	// during a database read is memoized here and will eventually be returned
 	// by StateDB.Commit.
+	// 用于consensus core和VM的State objects都不能处理database-level的错误
+	// 任何在读数据库的过程中遇到的问题都会被存在这里并且最终在StateDB.Commmit的时候返回
 	dbErr error
 
 	// The refund counter, also used by state transitioning.
@@ -80,6 +83,7 @@ type StateDB struct {
 
 	// Journal of state modifications. This is the backbone of
 	// Snapshot and RevertToSnapshot.
+	// state modifications的Journal, 这是Snapshot和RevertToSnapshot的backbone
 	journal        *journal
 	validRevisions []revision
 	nextRevisionId int
@@ -278,6 +282,7 @@ func (self *StateDB) HasSuicided(addr common.Address) bool {
  */
 
 // AddBalance adds amount to the account associated with addr.
+// AddBalance将amount加入到和addr相关的account
 func (self *StateDB) AddBalance(addr common.Address, amount *big.Int) {
 	stateObject := self.GetOrNewStateObject(addr)
 	if stateObject != nil {
@@ -588,6 +593,7 @@ func (s *StateDB) clearJournalAndRefund() {
 }
 
 // Commit writes the state to the underlying in-memory trie database.
+// Commit将state写入底层的in-memory trie database
 func (s *StateDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) {
 	defer s.clearJournalAndRefund()
 

@@ -126,6 +126,8 @@ func New(conf *Config) (*Node, error) {
 
 // Register injects a new service into the node's stack. The service created by
 // the passed constructor must be unique in its type with regard to sibling ones.
+// Register在一个node的stack中注入一个新的service
+// 通过传入的constructor创建的service的类型和它的sibling ones相比必须是唯一的
 func (n *Node) Register(constructor ServiceConstructor) error {
 	n.lock.Lock()
 	defer n.lock.Unlock()

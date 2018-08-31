@@ -66,7 +66,9 @@ func errResp(code errCode, format string, v ...interface{}) error {
 type ProtocolManager struct {
 	networkID uint64
 
+	// fastSync用于决定是否打开fast sync（如果我们已经有block了，则关闭）
 	fastSync  uint32 // Flag whether fast sync is enabled (gets disabled if we already have blocks)
+	// acceptTxs确定是否同步（使能transaction processing）
 	acceptTxs uint32 // Flag whether we're considered synchronised (enables transaction processing)
 
 	txpool      txPool
@@ -98,6 +100,8 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new Ethereum sub protocol manager. The Ethereum sub protocol manages peers capable
 // with the Ethereum network.
+// NewProtocolManager返回一个新的Ethereum sub protocol manager
+// Ethereum sub protocol管理那些能够加入Ethereum network的peers
 func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkID uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb ethdb.Database) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
@@ -159,6 +163,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
+	// 构建不同的同步机制
 	manager.downloader = downloader.New(mode, chaindb, manager.eventMux, blockchain, nil, manager.removePeer)
 
 	validator := func(header *types.Header) error {
@@ -169,6 +174,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 	}
 	inserter := func(blocks types.Blocks) (int, error) {
 		// If fast sync is running, deny importing weird blocks
+		// 如果正在运行fast sync，则拒绝添加weird blocks
 		if atomic.LoadUint32(&manager.fastSync) == 1 {
 			log.Warn("Discarded bad propagated block", "number", blocks[0].Number(), "hash", blocks[0].Hash())
 			return 0, nil

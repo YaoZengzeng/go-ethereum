@@ -206,6 +206,7 @@ func (s *resubscribeSub) backoffWait() bool {
 }
 
 // SubscriptionScope provides a facility to unsubscribe multiple subscriptions at once.
+// SubscriptionScope提供了一种设施用于一次性取消对于多个subscriptions的订阅
 //
 // For code that handle more than one subscription, a scope can be used to conveniently
 // unsubscribe all of them with a single call. The example demonstrates a typical use in a

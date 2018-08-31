@@ -355,6 +355,8 @@ func (bc *BlockChain) GasLimit() uint64 {
 
 // CurrentBlock retrieves the current head block of the canonical chain. The
 // block is retrieved from the blockchain's internal cache.
+// CurrentBlock获取canonical chain的current head block
+// 该block是从blockchain的internal cache中获取的
 func (bc *BlockChain) CurrentBlock() *types.Block {
 	return bc.currentBlock.Load().(*types.Block)
 }
@@ -596,6 +598,7 @@ func (bc *BlockChain) GetBlock(hash common.Hash, number uint64) *types.Block {
 		return nil
 	}
 	// Cache the found block for next time and return
+	// 对获取到的block进行缓存并且返回
 	bc.blockCache.Add(block.Hash(), block)
 	return block
 }

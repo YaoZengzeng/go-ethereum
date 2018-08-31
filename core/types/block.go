@@ -73,8 +73,11 @@ type Header struct {
 	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
 	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
 	Coinbase    common.Address `json:"miner"            gencodec:"required"`
+	// state的hash
 	Root        common.Hash    `json:"stateRoot"        gencodec:"required"`
+	// transaction的hash
 	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"`
+	// receipt的hash
 	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"`
 	Bloom       Bloom          `json:"logsBloom"        gencodec:"required"`
 	Difficulty  *big.Int       `json:"difficulty"       gencodec:"required"`
@@ -148,6 +151,7 @@ type Body struct {
 type Block struct {
 	header       *Header
 	uncles       []*Header
+	// 保存block中所有的transactions
 	transactions Transactions
 
 	// caches

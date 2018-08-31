@@ -61,6 +61,7 @@ type Agent interface {
 }
 
 // Env is the workers current environment and holds all of the current state information.
+// Env是worker当前的environment并且包含了当前所有的state information
 type Env struct {
 	config *params.ChainConfig
 	signer types.Signer
@@ -196,6 +197,7 @@ func (self *worker) pendingBlock() *types.Block {
 func (self *worker) start() {
 	self.mu.Lock()
 	defer self.mu.Unlock()
+	// 设置self.running为1
 	atomic.StoreInt32(&self.running, 1)
 	// 启动各个agent
 	for agent := range self.agents {
@@ -220,6 +222,7 @@ func (self *worker) isRunning() bool {
 func (self *worker) register(agent Agent) {
 	self.mu.Lock()
 	defer self.mu.Unlock()
+	// 将agent加入worker中
 	self.agents[agent] = struct{}{}
 	agent.DeliverTo(self.recv)
 	if self.isRunning() {
@@ -256,6 +259,7 @@ func (self *worker) update() {
 		// Handle NewTxsEvent
 		case ev := <-self.txsCh:
 			// Apply transactions to the pending state if we're not mining.
+			// 将所有的transactions置为pending state，如果我们不是mining的话
 			//
 			// Note all transactions received may not be continuous with transactions
 			// already included in the current mining block. These transactions will
@@ -275,6 +279,7 @@ func (self *worker) update() {
 				self.currentMu.Unlock()
 			} else {
 				// If we're mining, but nothing is being processed, wake on new transactions
+				// 如果我们正在mining并且没有
 				if self.config.Clique != nil && self.config.Clique.Period == 0 {
 					self.commitNewWork()
 				}
@@ -338,6 +343,7 @@ func (self *worker) wait() {
 }
 
 // push sends a new work task to currently live miner agents.
+// push将一个新的work task传输给当前的live miner agents
 func (self *worker) push(p *Package) {
 	for agent := range self.agents {
 		agent.AssignTask(p)
@@ -372,6 +378,7 @@ func (self *worker) makeCurrent(parent *types.Block, header *types.Header) error
 	}
 
 	// Keep track of transactions which return errors so they can be removed
+	// 追踪那些返回error的transactions，这样它们就能被移除
 	env.tcount = 0
 	self.current = env
 	return nil
@@ -417,6 +424,7 @@ func (self *worker) commitNewWork() {
 		}
 		header.Coinbase = self.coinbase
 	}
+	// 计算header的difficulty
 	if err := self.engine.Prepare(self.chain, header); err != nil {
 		log.Error("Failed to prepare header for mining", "err", err)
 		return
@@ -484,7 +492,10 @@ func (self *worker) commitNewWork() {
 		// Push empty work in advance without applying pending transaction.
 		// The reason is transactions execution can cost a lot and sealer need to
 		// take advantage of this part time.
+		// 提前push empty work，而不添加任何的pending transaction
+		// 理由是transactions执行会花费很多，而sealer需要充分利用这部分时间
 		if self.isRunning() {
+			// 提交新的mining work
 			log.Info("Commit new empty mining work", "number", emptyBlock.Number(), "uncles", len(uncles))
 			self.push(&Package{nil, emptyState, emptyBlock})
 		}
@@ -501,11 +512,13 @@ func (self *worker) commitNewWork() {
 	env.commitTransactions(self.mux, txs, self.chain, self.coinbase)
 
 	// Create the full block to seal with the consensus engine
+	// 创建一个full block用于共识引擎的seal
 	if fullBlock, err = self.engine.Finalize(self.chain, header, env.state, env.txs, uncles, env.receipts); err != nil {
 		log.Error("Failed to finalize block for sealing", "err", err)
 		return
 	}
 	// We only care about logging if we're actually mining.
+	// 如果我们真的在mining的话，我们只关心logging
 	if self.isRunning() {
 		log.Info("Commit new full mining work", "number", fullBlock.Number(), "txs", env.tcount, "uncles", len(uncles), "elapsed", common.PrettyDuration(time.Since(tstart)))
 		self.unconfirmed.Shift(fullBlock.NumberU64() - 1)
@@ -583,8 +596,10 @@ func (env *Env) commitTransactions(mux *event.TypeMux, txs *types.TransactionsBy
 			continue
 		}
 		// Start executing the transaction
+		// 启动执行transaction
 		env.state.Prepare(tx.Hash(), common.Hash{}, env.tcount)
 
+		// 创建evm执行transaction
 		err, logs := env.commitTransaction(tx, bc, coinbase, env.gasPool)
 		switch err {
 		case core.ErrGasLimitReached:

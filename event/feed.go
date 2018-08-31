@@ -26,10 +26,13 @@ var errBadChannel = errors.New("event: Subscribe argument does not have sendable
 
 // Feed implements one-to-many subscriptions where the carrier of events is a channel.
 // Values sent to a Feed are delivered to all subscribed channels simultaneously.
+// Feed实现了一对多的订阅机制，events的carrier是一个channel，传输给Feed的Value会被同时分发到所有的
+// subscribed channels
 //
 // Feeds can only be used with a single type. The type is determined by the first Send or
 // Subscribe operation. Subsequent calls to these methods panic if the type does not
 // match.
+// Feeds之恩给你用于一种类型，类型取决于第一次Send或者Subscribe操作，之后对于这些方法的调用会panic，如果类型不匹配的话
 //
 // The zero value is ready to use.
 type Feed struct {
@@ -67,9 +70,11 @@ func (f *Feed) init() {
 
 // Subscribe adds a channel to the feed. Future sends will be delivered on the channel
 // until the subscription is canceled. All channels added must have the same element type.
+// Subscribe加入一个channel到feed, 之后的sends都会被发送给这个channel，直到订阅取消，所有加入的channel必须要有同样的元素类型
 //
 // The channel should have ample buffer space to avoid blocking other subscribers.
 // Slow subscribers are not dropped.
+// channel必须要有充足的空间用于避免阻塞其他的subscriber
 func (f *Feed) Subscribe(channel interface{}) Subscription {
 	f.once.Do(f.init)
 

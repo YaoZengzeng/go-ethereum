@@ -209,6 +209,7 @@ func (tx *Transaction) Size() common.StorageSize {
 }
 
 // AsMessage returns the transaction as a core.Message.
+// AsMessage将transaction作为一个core.Message返回
 //
 // AsMessage requires a signer to derive the sender.
 //
@@ -237,6 +238,7 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 		return nil, err
 	}
 	cpy := &Transaction{data: tx.data}
+	// 对其中的R, S, V进行赋值
 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
 	return cpy, nil
 }

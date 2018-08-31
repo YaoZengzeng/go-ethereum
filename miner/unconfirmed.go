@@ -34,6 +34,8 @@ type headerRetriever interface {
 
 // unconfirmedBlock is a small collection of metadata about a locally mined block
 // that is placed into a unconfirmed set for canonical chain inclusion tracking.
+// unconfirmedBlock是一个本地挖出的block的一小部分metadata
+// 它会被放入unconfirmed set用于canonical chain inclusion tracking
 type unconfirmedBlock struct {
 	index uint64
 	hash  common.Hash
@@ -46,13 +48,16 @@ type unconfirmedBlock struct {
 // unconfirmedBlocks实现了一个数据结构用户维护本地挖出的，但是还不能保证chain inclusion的block
 // 它被miner用于向user提供logs，当之前挖的block已经足够保证不会被canonical chain替代
 type unconfirmedBlocks struct {
+	// 通过chain来验证canonical status
 	chain  headerRetriever // Blockchain to verify canonical status through
+	// 超过depth的previous blocks就应该被丢弃
 	depth  uint            // Depth after which to discard previous blocks
 	blocks *ring.Ring      // Block infos to allow canonical chain cross checks
 	lock   sync.RWMutex    // Protects the fields from concurrent access
 }
 
 // newUnconfirmedBlocks returns new data structure to track currently unconfirmed blocks.
+// newUnconfirmedBlocks返回一个新的数据结构用于追踪当前未被confirmed的block
 func newUnconfirmedBlocks(chain headerRetriever, depth uint) *unconfirmedBlocks {
 	return &unconfirmedBlocks{
 		chain: chain,
@@ -61,8 +66,10 @@ func newUnconfirmedBlocks(chain headerRetriever, depth uint) *unconfirmedBlocks 
 }
 
 // Insert adds a new block to the set of unconfirmed ones.
+// Insert将一个新的block加入unconfirmed set
 func (set *unconfirmedBlocks) Insert(index uint64, hash common.Hash) {
 	// If a new block was mined locally, shift out any old enough blocks
+	// 如果一个新的block在本地被mined，将任何足够老的block移除
 	set.Shift(index)
 
 	// Create the new item as its own ring
@@ -81,12 +88,15 @@ func (set *unconfirmedBlocks) Insert(index uint64, hash common.Hash) {
 		set.blocks.Move(-1).Link(item)
 	}
 	// Display a log for the user to notify of a new mined block unconfirmed
+	// 展示log给用户，用于通知一个新挖的unconfirmed block
 	log.Info("🔨 mined potential block", "number", index, "hash", hash)
 }
 
 // Shift drops all unconfirmed blocks from the set which exceed the unconfirmed sets depth
 // allowance, checking them against the canonical chain for inclusion or staleness
 // report.
+// Shift丢弃所有超过unconfirmed sets depth allowance的unconfirmed blocks
+// 用canonical chain检测它们，用于inclusion或者staleness report
 func (set *unconfirmedBlocks) Shift(height uint64) {
 	set.lock.Lock()
 	defer set.lock.Unlock()

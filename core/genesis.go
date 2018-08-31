@@ -44,6 +44,8 @@ var errGenesisNoConfig = errors.New("genesis has no chain configuration")
 
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
+// Genesis指定了一个genesis block的header fields以及state
+// 它同时也定义了hard fork的switch-over block，通过chain configuration
 type Genesis struct {
 	Config     *params.ChainConfig `json:"config"`
 	Nonce      uint64              `json:"nonce"`
@@ -63,6 +65,7 @@ type Genesis struct {
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
+// GenesisAlloc指定了genesis block的初始化状态
 type GenesisAlloc map[common.Address]GenesisAccount
 
 func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
@@ -78,6 +81,7 @@ func (ga *GenesisAlloc) UnmarshalJSON(data []byte) error {
 }
 
 // GenesisAccount is an account in the state of the genesis block.
+// GenesisAccount是位于genesis block的state中的account
 type GenesisAccount struct {
 	Code       []byte                      `json:"code,omitempty"`
 	Storage    map[common.Hash]common.Hash `json:"storage,omitempty"`
@@ -138,6 +142,7 @@ func (e *GenesisMismatchError) Error() string {
 }
 
 // SetupGenesisBlock writes or updates the genesis block in db.
+// SetupGenesisBlock写入或者更新db中的genesis block
 // The block that will be used is:
 //
 //                          genesis == nil       genesis != nil
@@ -148,6 +153,8 @@ func (e *GenesisMismatchError) Error() string {
 // The stored chain configuration will be updated if it is compatible (i.e. does not
 // specify a fork block below the local head block). In case of a conflict, the
 // error is a *params.ConfigCompatError and the new, unwritten config is returned.
+// 保存的chain configuration会被更新，如果兼容的话
+// 当出现冲突时，返回的error是*params.ConfigCompatError以及一个新的，未写入的config
 //
 // The returned chain configuration is never nil.
 func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
@@ -158,6 +165,7 @@ func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig
 	// Just commit the new block if there is no stored genesis block.
 	stored := rawdb.ReadCanonicalHash(db, 0)
 	if (stored == common.Hash{}) {
+		// 如果数据库未存有genesis block
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
 			genesis = DefaultGenesisBlock()
@@ -170,8 +178,10 @@ func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig
 
 	// Check whether the genesis block is already written.
 	if genesis != nil {
+		// 如果指定的genesis block和已经存入的不一致
 		hash := genesis.ToBlock(nil).Hash()
 		if hash != stored {
+			// 仍旧返回用户指定的genesis
 			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
 		}
 	}
@@ -220,12 +230,14 @@ func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 
 // ToBlock creates the genesis block and writes state of a genesis specification
 // to the given database (or discards it if nil).
+// ToBlock创建genesis block并且将一个genesis specification的state写入给定的数据库
 func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 	if db == nil {
 		db = ethdb.NewMemDatabase()
 	}
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	for addr, account := range g.Alloc {
+		// 将account中的balance, code, nonce以及Storage存入statedb中
 		statedb.AddBalance(addr, account.Balance)
 		statedb.SetCode(addr, account.Code)
 		statedb.SetNonce(addr, account.Nonce)
@@ -261,6 +273,8 @@ func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 
 // Commit writes the block and state of a genesis specification to the database.
 // The block is committed as the canonical head block.
+// Commit将genesis的block以及state写入数据库中
+// 这个block被提交为canonical head block
 func (g *Genesis) Commit(db ethdb.Database) (*types.Block, error) {
 	block := g.ToBlock(db)
 	if block.Number().Sign() != 0 {

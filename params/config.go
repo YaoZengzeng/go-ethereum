@@ -31,6 +31,7 @@ var (
 
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
+	// MainnetChainConfig是在main network运行一个节点的chain parameters
 	MainnetChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(1),
 		HomesteadBlock:      big.NewInt(1150000),
@@ -171,6 +172,7 @@ func (c *ChainConfig) String() string {
 }
 
 // IsHomestead returns whether num is either equal to the homestead block or greater.
+// IsHomestead检查num是否大于等于homestead block
 func (c *ChainConfig) IsHomestead(num *big.Int) bool {
 	return isForked(c.HomesteadBlock, num)
 }

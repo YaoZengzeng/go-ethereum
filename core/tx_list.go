@@ -50,7 +50,9 @@ func (h *nonceHeap) Pop() interface{} {
 // txSortedMap is a nonce->transaction hash map with a heap based index to allow
 // iterating over the contents in a nonce-incrementing way.
 type txSortedMap struct {
+	// nonce->transaction的hash map
 	items map[uint64]*types.Transaction // Hash map storing the transaction data
+	// 所有存储的transactions的nonce的heap
 	index *nonceHeap                    // Heap of nonces of all the stored transactions (non-strict mode)
 	cache types.Transactions            // Cache of the transactions already sorted
 }
@@ -219,7 +221,11 @@ func (m *txSortedMap) Flatten() types.Transactions {
 // nonce. The same type can be used both for storing contiguous transactions for
 // the executable/pending queue; and for storing gapped transactions for the non-
 // executable/future queue, with minor behavioral changes.
+// txList是属于一个account的transactions list，根据account nonce进行排序
+// 这个类型既可以用来存储连续的transactions用于executable/pending queue
+// 也可以用来存储gapped transactions用于non-executable/future queue
 type txList struct {
+	// 是否nonces是严格排序的
 	strict bool         // Whether nonces are strictly continuous or not
 	txs    *txSortedMap // Heap indexed sorted hash map of the transactions
 
@@ -274,6 +280,8 @@ func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Tran
 // Forward removes all transactions from the list with a nonce lower than the
 // provided threshold. Every removed transaction is returned for any post-removal
 // maintenance.
+// Forward将nonce低于给定的threshold的所有transactions从list中移除
+// 所有被移除的transactions会返回给post-removal maintenance
 func (l *txList) Forward(threshold uint64) types.Transactions {
 	return l.txs.Forward(threshold)
 }
@@ -338,10 +346,13 @@ func (l *txList) Remove(tx *types.Transaction) (bool, types.Transactions) {
 // Ready retrieves a sequentially increasing list of transactions starting at the
 // provided nonce that is ready for processing. The returned transactions will be
 // removed from the list.
+// Ready获取从给定的nonce开始的一个顺序的transactions，返回的transactions会被从list中移除
 //
 // Note, all transactions with nonces lower than start will also be returned to
 // prevent getting into and invalid state. This is not something that should ever
 // happen but better to be self correcting than failing!
+// 值得注意的是，所有nonces低于start的transactions也会被返回
+// 从而防止进入invalid state
 func (l *txList) Ready(start uint64) types.Transactions {
 	return l.txs.Ready(start)
 }

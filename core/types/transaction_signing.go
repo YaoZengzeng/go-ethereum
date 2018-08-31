@@ -54,6 +54,7 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int) Signer {
 }
 
 // SignTx signs the transaction using the given signer and private key
+// SignTx用给定的signer和private key对transactions进行sign
 func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, error) {
 	h := s.Hash(tx)
 	sig, err := crypto.Sign(h[:], prv)
@@ -94,6 +95,7 @@ func Sender(signer Signer, tx *Transaction) (common.Address, error) {
 // Signer对transaction的signature handling进行了封装
 type Signer interface {
 	// Sender returns the sender address of the transaction.
+	// Sender返回transaction的sender的address
 	Sender(tx *Transaction) (common.Address, error)
 	// SignatureValues returns the raw R, S, V values corresponding to the
 	// given signature.

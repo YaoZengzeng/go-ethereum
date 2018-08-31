@@ -116,7 +116,7 @@ func (self *Miner) Start(coinbase common.Address) {
 		log.Info("Network syncing, will start miner afterwards")
 		return
 	}
-	// 启动worker
+	// 启动worker,即将worker设置为running, 启动各个agent
 	self.worker.start()
 	self.worker.commitNewWork()
 }

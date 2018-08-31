@@ -43,6 +43,8 @@ type Database interface {
 
 // Batch is a write-only database that commits changes to its host database
 // when Write is called. Batch cannot be used concurrently.
+// Batch是一个write-only database，当调用Write函数的时候会将修改提交到host dabase
+// Batch不能被并行使用
 type Batch interface {
 	Putter
 	Deleter

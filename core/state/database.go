@@ -39,6 +39,7 @@ const (
 )
 
 // Database wraps access to tries and contract code.
+// Database封装了对trie以及contract code的访问方式
 type Database interface {
 	// OpenTrie opens the main account trie.
 	OpenTrie(root common.Hash) (Trie, error)
@@ -93,6 +94,7 @@ type cachingDB struct {
 }
 
 // OpenTrie opens the main account trie.
+// OpenTrie打开main account的trie
 func (db *cachingDB) OpenTrie(root common.Hash) (Trie, error) {
 	db.mu.Lock()
 	defer db.mu.Unlock()

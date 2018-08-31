@@ -464,6 +464,7 @@ func calcDifficultyFrontier(time uint64, parent *types.Header) *big.Int {
 
 // VerifySeal implements consensus.Engine, checking whether the given block satisfies
 // the PoW difficulty requirements.
+// VerifySeal实现了consensus.Engine，检查给定的block是否满足PoW的difficulty requirements
 func (ethash *Ethash) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
 	// If we're running a fake PoW, accept any seal as valid
 	if ethash.config.PowMode == ModeFake || ethash.config.PowMode == ModeFullFake {
@@ -482,6 +483,7 @@ func (ethash *Ethash) VerifySeal(chain consensus.ChainReader, header *types.Head
 		return errInvalidDifficulty
 	}
 	// Recompute the digest and PoW value and verify against the header
+	// 重新计算digest和PoW value并和header验证
 	number := header.Number.Uint64()
 
 	cache := ethash.cache(number)
@@ -523,6 +525,7 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 // 设置了final state并且组装了block
 func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
 	// Accumulate any block and uncle rewards and commit the final state root
+	// 累加所有的block以及uncle rewards并且提交final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 

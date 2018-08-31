@@ -208,6 +208,7 @@ func TestStateChangeDuringTransactionPoolReset(t *testing.T) {
 	}
 
 	// trigger state change in the background
+	// 在后台触发state change
 	trigger = true
 
 	pool.lockedReset(nil, nil)
