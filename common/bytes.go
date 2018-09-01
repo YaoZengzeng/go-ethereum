@@ -85,6 +85,7 @@ func Bytes2Hex(d []byte) string {
 }
 
 // Hex2Bytes returns the bytes represented by the hexadecimal string str.
+// Hex2Bytes将十六进制文件转换为bytes
 func Hex2Bytes(str string) []byte {
 	h, _ := hex.DecodeString(str)
 	return h

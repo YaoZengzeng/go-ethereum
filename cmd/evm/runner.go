@@ -85,6 +85,7 @@ func runCmd(ctx *cli.Context) error {
 		statedb     *state.StateDB
 		chainConfig *params.ChainConfig
 		sender      = common.BytesToAddress([]byte("sender"))
+		// 将receiver直接设置为"receiver的编码"
 		receiver    = common.BytesToAddress([]byte("receiver"))
 		blockNumber uint64
 	)
@@ -109,6 +110,7 @@ func runCmd(ctx *cli.Context) error {
 	if ctx.GlobalString(SenderFlag.Name) != "" {
 		sender = common.HexToAddress(ctx.GlobalString(SenderFlag.Name))
 	}
+	// 创建sender的account
 	statedb.CreateAccount(sender)
 
 	if ctx.GlobalString(ReceiverFlag.Name) != "" {
@@ -192,6 +194,7 @@ func runCmd(ctx *cli.Context) error {
 		ret, _, leftOverGas, err = runtime.Create(input, &runtimeConfig)
 	} else {
 		if len(code) > 0 {
+			// 如果code不为空，则在state db中设置code
 			statedb.SetCode(receiver, code)
 		}
 		ret, leftOverGas, err = runtime.Call(receiver, common.Hex2Bytes(ctx.GlobalString(InputFlag.Name)), &runtimeConfig)

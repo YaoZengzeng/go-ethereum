@@ -109,6 +109,7 @@ type Context struct {
 // EVM不能被重用并且不是线程安全的
 type EVM struct {
 	// Context provides auxiliary blockchain related information
+	// Context提供blockchain的辅助配置
 	Context
 	// StateDB gives access to the underlying state
 	StateDB StateDB
@@ -207,6 +208,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			}
 			return nil, gas, nil
 		}
+		// 创建contract account
 		evm.StateDB.CreateAccount(addr)
 	}
 	evm.Transfer(evm.StateDB, caller.Address(), to.Address(), value)
@@ -362,6 +364,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 }
 
 // create creates a new contract using code as deployment code.
+// create创建一个新的contract，将参数中的code作为deployment code
 func (evm *EVM) create(caller ContractRef, code []byte, gas uint64, value *big.Int, address common.Address) ([]byte, common.Address, uint64, error) {
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
@@ -459,7 +462,9 @@ func (evm *EVM) Create(caller ContractRef, code []byte, gas uint64, value *big.I
 //
 // The different between Create2 with Create is Create2 uses sha3(msg.sender ++ salt ++ init_code)[12:]
 // instead of the usual sender-and-nonce-hash as the address where the contract is initialized at.
+// Create2和Create的不同之处在于，Create2使用sha(msg.sender ++ salt ++ init_code)[12:]作为地址，而不是sender-and-nonce-hash
 func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+	// 仅仅只是contract的地址不同
 	contractAddr = crypto.CreateAddress2(caller.Address(), common.BigToHash(salt), code)
 	return evm.create(caller, code, gas, endowment, contractAddr)
 }

@@ -30,6 +30,7 @@ import (
 )
 
 // Storage represents a contract's storage.
+// Storage代表了一个contract的存储
 type Storage map[common.Hash]common.Hash
 
 // Copy duplicates the current storage.
@@ -43,6 +44,7 @@ func (s Storage) Copy() Storage {
 }
 
 // LogConfig are the configuration options for structured logger the EVM
+// LogConfig是EVM的structured logger的配置选项
 type LogConfig struct {
 	DisableMemory  bool // disable memory capture
 	DisableStack   bool // disable stack capture
@@ -55,6 +57,7 @@ type LogConfig struct {
 
 // StructLog is emitted to the EVM each cycle and lists information about the current internal state
 // prior to the execution of the statement.
+// StructLog会在EVM的每个cycle中起作用，在指令执行之前记录当前的internal state
 type StructLog struct {
 	Pc         uint64                      `json:"pc"`
 	Op         OpCode                      `json:"op"`
@@ -106,6 +109,7 @@ type Tracer interface {
 }
 
 // StructLogger is an EVM state logger and implements Tracer.
+// StructLogger是一个EVM state logger并且实现了Tracer
 //
 // StructLogger can capture state based on the given Log configuration and also keeps
 // a track record of modified storage which is used in reporting snapshots of the
@@ -214,6 +218,7 @@ func (l *StructLogger) Error() error { return l.err }
 func (l *StructLogger) Output() []byte { return l.output }
 
 // WriteTrace writes a formatted trace to the given writer
+// WriteTrace将formatted trace写入给定的writer
 func WriteTrace(writer io.Writer, logs []StructLog) {
 	for _, log := range logs {
 		fmt.Fprintf(writer, "%-16spc=%08d gas=%v cost=%v", log.Op, log.Pc, log.Gas, log.GasCost)

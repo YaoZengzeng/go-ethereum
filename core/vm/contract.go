@@ -109,6 +109,7 @@ func (c *Contract) GetOp(n uint64) OpCode {
 // GetByte returns the n'th byte in the contract's byte array
 func (c *Contract) GetByte(n uint64) byte {
 	if n < uint64(len(c.Code)) {
+		// 操作码从contract的code中获取
 		return c.Code[n]
 	}
 

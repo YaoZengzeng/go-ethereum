@@ -31,6 +31,7 @@ import (
 
 // Config is a basic type specifying certain configuration flags for running
 // the EVM.
+// Config用于指定运行EVM的特定配置
 type Config struct {
 	ChainConfig *params.ChainConfig
 	Difficulty  *big.Int
@@ -148,9 +149,11 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 
 // Call executes the code given by the contract's address. It will return the
 // EVM's return value or an error if it failed.
+// Call执行给定contract的地址的code，它会返回EVM的return value或者error，如果执行错误的话
 //
 // Call, unlike Execute, requires a config and also requires the State field to
 // be set.
+// Call和Execute不同，需要config以及设置State域
 func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, error) {
 	setDefaults(cfg)
 
@@ -158,6 +161,7 @@ func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, er
 
 	sender := cfg.State.GetOrNewStateObject(cfg.Origin)
 	// Call the code with the given configuration.
+	// 用给定的配置调用code
 	ret, leftOverGas, err := vmenv.Call(
 		sender,
 		address,

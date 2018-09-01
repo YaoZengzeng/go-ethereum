@@ -61,6 +61,8 @@ type DatabaseReader interface {
 // Database is an intermediate write layer between the trie data structures and
 // the disk database. The aim is to accumulate trie writes in-memory and only
 // periodically flush a couple tries to disk, garbage collecting the remainder.
+// Database是trie这个数据结构和disk database之间的intermediate write layer
+// 主要目的是将trie的写入操作缓存至内存中并且阶段性地将一系列地trie操作写入磁盘，GC剩余的
 type Database struct {
 	// 对于成熟的trie nodes的固定化存储
 	diskdb ethdb.Database // Persistent storage for matured trie nodes

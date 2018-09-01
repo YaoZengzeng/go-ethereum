@@ -238,10 +238,12 @@ func (self *StateDB) GetCodeSize(addr common.Address) int {
 }
 
 func (self *StateDB) GetCodeHash(addr common.Address) common.Hash {
+	// 首先根据address获取state object对象
 	stateObject := self.getStateObject(addr)
 	if stateObject == nil {
 		return common.Hash{}
 	}
+	// 将state object对象中的code hash进行转换
 	return common.BytesToHash(stateObject.CodeHash())
 }
 
@@ -410,6 +412,8 @@ func (self *StateDB) GetOrNewStateObject(addr common.Address) *stateObject {
 
 // createObject creates a new state object. If there is an existing account with
 // the given address, it is overwritten and returned as the second return value.
+// createObject创建一个新的state object，如果存在了一个给定address已经存在了一个account
+// 则会对它进行覆盖并且作为第二个值返回
 func (self *StateDB) createObject(addr common.Address) (newobj, prev *stateObject) {
 	prev = self.getStateObject(addr)
 	newobj = newObject(self, addr, Account{})

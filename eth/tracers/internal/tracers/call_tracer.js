@@ -16,6 +16,8 @@
 
 // callTracer is a full blown transaction tracer that extracts and reports all
 // the internal calls made by a transaction, along with any useful information.
+// callTracer是一个全面的transaction tracer，它会提取并且汇报所有transaction内部的
+// calls，伴随着所有有用的信息
 {
 	// callstack is the current recursive call stack of the EVM execution.
 	callstack: [{}],
@@ -25,6 +27,7 @@
 	descended: false,
 
 	// step is invoked for every opcode that the VM executes.
+	// VM执行的每一个opcode都会调用step
 	step: function(log, db) {
 		// Capture any errors immediately
 		var error = log.getError();
@@ -38,6 +41,7 @@
 			var op = log.op.toString();
 		}
 		// If a new contract is being created, add to the call stack
+		// 如果一个新的contract被创建了，添加到stack中
 		if (syscall && op == 'CREATE') {
 			var inOff = log.stack.peek(1).valueOf();
 			var inEnd = inOff + log.stack.peek(2).valueOf();

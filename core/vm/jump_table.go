@@ -36,10 +36,12 @@ type operation struct {
 	// execute is the operation function
 	execute executionFunc
 	// gasCost is the gas function and returns the gas required for execution
+	// gasCost是gas函数用于返回执行操作需要的gas
 	gasCost gasFunc
 	// validateStack validates the stack (size) for the operation
 	validateStack stackValidationFunc
 	// memorySize returns the memory size required for the operation
+	// memorySize返回操作所需的memeory size
 	memorySize memorySizeFunc
 
 	halts   bool // indicates whether the operation should halt further execution
@@ -154,6 +156,7 @@ func newHomesteadInstructionSet() [256]operation {
 
 // NewFrontierInstructionSet returns the frontier instructions
 // that can be executed during the frontier phase.
+// NewFrontierInstructionSet返回在frontier阶段能够执行的instructions
 func newFrontierInstructionSet() [256]operation {
 	return [256]operation{
 		STOP: {

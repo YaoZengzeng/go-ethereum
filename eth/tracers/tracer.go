@@ -307,6 +307,7 @@ type Tracer struct {
 // New instantiates a new tracer instance. code specifies a Javascript snippet,
 // which must evaluate to an expression returning an object with 'step', 'fault'
 // and 'result' functions.
+// New返回一个tracer实例，code指定了一个Javascript代码段
 func New(code string) (*Tracer, error) {
 	// Resolve any tracers by name and assemble the tracer object
 	if tracer, ok := tracer(code); ok {
@@ -571,6 +572,7 @@ func (jst *Tracer) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, er
 }
 
 // GetResult calls the Javascript 'result' function and returns its value, or any accumulated error
+// GetResult调用Javascript的`result`函数并且返回它的值，或者任何累计的error
 func (jst *Tracer) GetResult() (json.RawMessage, error) {
 	// Transform the context into a JavaScript object and inject into the state
 	obj := jst.vm.PushObject()

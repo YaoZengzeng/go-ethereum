@@ -16,6 +16,7 @@
 
 // prestateTracer outputs sufficient information to create a local execution of
 // the transaction from a custom assembled genesis block.
+// prestateTracer输出足够的信息用于创建一个本地执行的transaction，从custom assembled genesis block
 {
 	// prestate is the genesis that we're building.
 	prestate: null,

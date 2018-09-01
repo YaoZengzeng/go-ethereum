@@ -37,6 +37,7 @@ func camel(str string) string {
 }
 
 // init retrieves the JavaScript transaction tracers included in go-ethereum.
+// init获取到了所有在go-ethereum中包含的JavaScript transaction tracers
 func init() {
 	for _, file := range tracers.AssetNames() {
 		name := camel(strings.TrimSuffix(file, ".js"))
