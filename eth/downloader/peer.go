@@ -46,6 +46,7 @@ var (
 )
 
 // peerConnection represents an active peer from which hashes and blocks are retrieved.
+// peerConnection代表一个active peer，从它可以获取hashes和blocks
 type peerConnection struct {
 	id string // Unique identifier of the peer
 
@@ -76,6 +77,7 @@ type peerConnection struct {
 }
 
 // LightPeer encapsulates the methods required to synchronise with a remote light peer.
+// LightPeer封装了一系列方法用于从远程的light peer进行同步
 type LightPeer interface {
 	Head() (common.Hash, *big.Int)
 	RequestHeadersByHash(common.Hash, int, int, bool) error
@@ -83,6 +85,7 @@ type LightPeer interface {
 }
 
 // Peer encapsulates the methods required to synchronise with a remote full peer.
+// Peer封装了一系列的方法用于从远程的full peer进行同步
 type Peer interface {
 	LightPeer
 	RequestBodies([]common.Hash) error
@@ -113,6 +116,7 @@ func (w *lightPeerWrapper) RequestNodeData([]common.Hash) error {
 }
 
 // newPeerConnection creates a new downloader peer.
+// newPeerConnection创建一个新的downloader peer
 func newPeerConnection(id string, version int, peer Peer, logger log.Logger) *peerConnection {
 	return &peerConnection{
 		id:      id,
@@ -348,6 +352,7 @@ func (p *peerConnection) Lacks(hash common.Hash) bool {
 
 // peerSet represents the collection of active peer participating in the chain
 // download procedure.
+// peerSet代表了一系列加入chain download procedure的active peer
 type peerSet struct {
 	peers        map[string]*peerConnection
 	newPeerFeed  event.Feed
@@ -385,10 +390,12 @@ func (ps *peerSet) Reset() {
 
 // Register injects a new peer into the working set, or returns an error if the
 // peer is already known.
+// Register将一个新的peer添加到working set，或者返回error，如果peer已知的话
 //
 // The method also sets the starting throughput values of the new peer to the
 // average of all existing peers, to give it a realistic chance of being used
 // for data retrievals.
+// 该方法同时设置了新的peer初始的throughput values，根据所有已经存在的peer的平均值
 func (ps *peerSet) Register(p *peerConnection) error {
 	// Retrieve the current median RTT as a sane default
 	p.rtt = ps.medianRTT()

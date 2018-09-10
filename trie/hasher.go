@@ -69,6 +69,7 @@ func newHasher(cachegen, cachelimit uint16, onleaf LeafCallback) *hasher {
 }
 
 func returnHasherToPool(h *hasher) {
+	// 将hasher返回hasherPool
 	hasherPool.Put(h)
 }
 
@@ -102,6 +103,7 @@ func (h *hasher) hash(n node, db *Database, force bool) (node, node, error) {
 	// Cache the hash of the node for later reuse and remove
 	// the dirty flag in commit mode. It's fine to assign these values directly
 	// without copying the node first because hashChildren copies it.
+	// 缓存node的hash用于以后使用并且在commit mode下移除dirty flag
 	cachedHash, _ := hashed.(hashNode)
 	switch cn := cached.(type) {
 	case *shortNode:

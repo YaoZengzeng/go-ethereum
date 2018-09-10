@@ -127,6 +127,7 @@ func (b *BlockGen) TxNonce(addr common.Address) uint64 {
 }
 
 // AddUncle adds an uncle header to the generated block.
+// AddUncle给生成的block增加一个uncle header
 func (b *BlockGen) AddUncle(h *types.Header) {
 	b.uncles = append(b.uncles, h)
 }
@@ -201,6 +202,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 			misc.ApplyDAOHardFork(statedb)
 		}
 		// Execute any user modifications to the block and finalize it
+		// 执行任何的用户对于block的修改并且finalize
 		if gen != nil {
 			gen(i, b)
 		}

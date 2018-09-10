@@ -29,6 +29,7 @@ import (
 
 var (
 	// emptyRoot is the known root hash of an empty trie.
+	// emptyRoot是一个empty trie已知的root hash
 	emptyRoot = common.HexToHash("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
 
 	// emptyState is the known hash of an empty state trie entry.
@@ -57,13 +58,17 @@ func CacheUnloads() int64 {
 // LeafCallback is a callback type invoked when a trie operation reaches a leaf
 // node. It's used by state sync and commit to allow handling external references
 // between account and storage tries.
+// LeafCallback是一个当到达trie的leaf node时的回调函数
+// 它一般用于state sync或者commit，从而允许在account和storage tries之间处理external references
 type LeafCallback func(leaf []byte, parent common.Hash) error
 
 // Trie is a Merkle Patricia Trie.
 // The zero value is an empty trie with no database.
+// Trie的零值是一个没有数据库的空trie
 // Use New to create a trie that sits on top of a database.
 //
 // Trie is not safe for concurrent use.
+// Trie对于并行访问是不安全的
 type Trie struct {
 	db           *Database
 	root         node
@@ -71,13 +76,17 @@ type Trie struct {
 
 	// Cache generation values.
 	// cachegen increases by one with each commit operation.
+	// 每次commit操作都会让cachegen加一
 	// new nodes are tagged with the current generation and unloaded
 	// when their generation is older than than cachegen-cachelimit.
+	// 新的node都和当前的generation绑定并且在它们的generation老于cachegen - cachelimit
+	// 的时候被unloaded
 	cachegen, cachelimit uint16
 }
 
 // SetCacheLimit sets the number of 'cache generations' to keep.
 // A cache generation is created by a call to Commit.
+// 每调用一次Commit就会创建一个cache generation
 func (t *Trie) SetCacheLimit(l uint16) {
 	t.cachelimit = l
 }
@@ -93,6 +102,9 @@ func (t *Trie) newFlag() nodeFlag {
 // trie is initially empty and does not require a database. Otherwise,
 // New will panic if db is nil and returns a MissingNodeError if root does
 // not exist in the database. Accessing the trie loads nodes from db on demand.
+// 如果root是一个zero hash或者一个空的string的sha3 hash，trie会被初始化为empty并且不需要
+// 一个database，否则New会panic并且返回MissingNodeError如果root不存在于数据库中
+// 访问trie，它会按序从数据库中加载node
 func New(root common.Hash, db *Database) (*Trie, error) {
 	if db == nil {
 		panic("trie.New called without a database")
@@ -102,10 +114,12 @@ func New(root common.Hash, db *Database) (*Trie, error) {
 		originalRoot: root,
 	}
 	if root != (common.Hash{}) && root != emptyRoot {
+		// 从数据库中解析root node
 		rootnode, err := trie.resolveHash(root[:], nil)
 		if err != nil {
 			return nil, err
 		}
+		// 设置root node
 		trie.root = rootnode
 	}
 	return trie, nil
@@ -113,6 +127,7 @@ func New(root common.Hash, db *Database) (*Trie, error) {
 
 // NodeIterator returns an iterator that returns nodes of the trie. Iteration starts at
 // the key after the given start key.
+// NodeIterator返回一个iterator，它能够返回trie的nodes，Iteration从给定的start之后开始便利
 func (t *Trie) NodeIterator(start []byte) NodeIterator {
 	return newNodeIterator(t, start)
 }
@@ -180,6 +195,7 @@ func (t *Trie) tryGet(origNode node, key []byte, pos int) (value []byte, newnode
 // Update associates key with value in the trie. Subsequent calls to
 // Get will return value. If value has length zero, any existing value
 // is deleted from the trie and calls to Get will return nil.
+// 如果value的长度为0，相应的value就会从trie中删除，并且调用Get会返回nil
 //
 // The value bytes must not be modified by the caller while they are
 // stored in the trie.
@@ -200,10 +216,12 @@ func (t *Trie) Update(key, value []byte) {
 func (t *Trie) TryUpdate(key, value []byte) error {
 	k := keybytesToHex(key)
 	if len(value) != 0 {
+		// 传入的第一个参数为node，返回的第二个参数为修改过后的node
 		_, n, err := t.insert(t.root, nil, k, valueNode(value))
 		if err != nil {
 			return err
 		}
+		// 最后将t.root赋值为n
 		t.root = n
 	} else {
 		_, n, err := t.delete(t.root, nil, k)
@@ -218,6 +236,7 @@ func (t *Trie) TryUpdate(key, value []byte) error {
 func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error) {
 	if len(key) == 0 {
 		if v, ok := n.(valueNode); ok {
+			// 只有两者的值不相等，返回的第一个参数dirty为true，表示已经修改了
 			return !bytes.Equal(v, value.(valueNode)), value, nil
 		}
 		return true, value, nil
@@ -227,6 +246,7 @@ func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error
 		matchlen := prefixLen(key, n.Key)
 		// If the whole key matches, keep this short node as is
 		// and only update the value.
+		// 如果整个key都匹配，则依旧保留该short node并且只更新它的value
 		if matchlen == len(n.Key) {
 			dirty, nn, err := t.insert(n.Val, append(prefix, key[:matchlen]...), key[matchlen:], value)
 			if !dirty || err != nil {
@@ -235,6 +255,7 @@ func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error
 			return true, &shortNode{n.Key, nn, t.newFlag()}, nil
 		}
 		// Otherwise branch out at the index where they differ.
+		// 否则分叉，构建一个fullNode
 		branch := &fullNode{flags: t.newFlag()}
 		var err error
 		_, branch.Children[n.Key[matchlen]], err = t.insert(nil, append(prefix, n.Key[:matchlen+1]...), n.Key[matchlen+1:], n.Val)
@@ -246,13 +267,16 @@ func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error
 			return false, nil, err
 		}
 		// Replace this shortNode with the branch if it occurs at index 0.
+		// 如果没有一个字符匹配，则将shortNode替换为fullNode
 		if matchlen == 0 {
 			return true, branch, nil
 		}
 		// Otherwise, replace it with a short node leading up to the branch.
+		// 否则，用一个包含branch的short node替换
 		return true, &shortNode{key[:matchlen], branch, t.newFlag()}, nil
 
 	case *fullNode:
+		// 遇到fullNode则在相应的Children中插入
 		dirty, nn, err := t.insert(n.Children[key[0]], append(prefix, key[0]), key[1:], value)
 		if !dirty || err != nil {
 			return false, n, err
@@ -263,12 +287,14 @@ func (t *Trie) insert(n node, prefix, key []byte, value node) (bool, node, error
 		return true, n, nil
 
 	case nil:
+		// 如果是nil则直接返回一个shortNode
 		return true, &shortNode{key, value, t.newFlag()}, nil
 
 	case hashNode:
 		// We've hit a part of the trie that isn't loaded yet. Load
 		// the node and insert into it. This leaves all child nodes on
 		// the path to the value in the trie.
+		// 我们遇到了trie中还未加载的部分，加载node并且插入
 		rn, err := t.resolveHash(n, prefix)
 		if err != nil {
 			return false, nil, err
@@ -445,6 +471,7 @@ func (t *Trie) Root() []byte { return t.Hash().Bytes() }
 
 // Hash returns the root hash of the trie. It does not write to the
 // database and can be used even if the trie doesn't have one.
+// Hash返回trie的root hash，它不会被写入数据库，即使没有数据库的时候也可以使用
 func (t *Trie) Hash() common.Hash {
 	hash, cached, _ := t.hashRoot(nil, nil)
 	t.root = cached
@@ -453,6 +480,7 @@ func (t *Trie) Hash() common.Hash {
 
 // Commit writes all nodes to the trie's memory database, tracking the internal
 // and external (for account tries) references.
+// Commit将所有节点写入trie的memory database，追踪所有的internal和external(对于account tries)引用
 func (t *Trie) Commit(onleaf LeafCallback) (root common.Hash, err error) {
 	if t.db == nil {
 		panic("commit called on trie with nil database")
@@ -467,6 +495,7 @@ func (t *Trie) Commit(onleaf LeafCallback) (root common.Hash, err error) {
 }
 
 func (t *Trie) hashRoot(db *Database, onleaf LeafCallback) (node, node, error) {
+	// 如果trie的root为nil，则直接返回emptyRoot的哈希值
 	if t.root == nil {
 		return hashNode(emptyRoot.Bytes()), nil, nil
 	}

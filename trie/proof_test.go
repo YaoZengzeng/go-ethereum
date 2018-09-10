@@ -34,16 +34,19 @@ func init() {
 
 // makeProvers creates Merkle trie provers based on different implementations to
 // test all variations.
+// makeProvers创建一个Merkle trie provers，基于各种不同的实现
 func makeProvers(trie *Trie) []func(key []byte) *ethdb.MemDatabase {
 	var provers []func(key []byte) *ethdb.MemDatabase
 
 	// Create a direct trie based Merkle prover
+	// 创建一个基于direct trie的Merkle prover
 	provers = append(provers, func(key []byte) *ethdb.MemDatabase {
 		proof := ethdb.NewMemDatabase()
 		trie.Prove(key, 0, proof)
 		return proof
 	})
 	// Create a leaf iterator based Merkle prover
+	// 创建一个基于leaf iterator的Merkel prover
 	provers = append(provers, func(key []byte) *ethdb.MemDatabase {
 		proof := ethdb.NewMemDatabase()
 		if it := NewIterator(trie.NodeIterator(key)); it.Next() && bytes.Equal(key, it.Key) {

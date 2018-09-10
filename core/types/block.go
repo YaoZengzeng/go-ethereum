@@ -244,6 +244,8 @@ func NewBlock(header *Header, txs []*Transaction, uncles []*Header, receipts []*
 // NewBlockWithHeader creates a block with the given header data. The
 // header data is copied, changes to header and to the field values
 // will not affect the block.
+// NewBlockWithHeader用给定的header data创建一个新的block
+// header data是被复制的，因此改变header以及它的字段不会影响block
 func NewBlockWithHeader(header *Header) *Block {
 	return &Block{header: CopyHeader(header)}
 }

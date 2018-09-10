@@ -15,4 +15,5 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package bloombits implements bloom filtering on batches of data.
+// bloombits包在批量数据上实现bloom filtering
 package bloombits

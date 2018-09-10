@@ -42,21 +42,25 @@ const (
 // Database封装了对trie以及contract code的访问方式
 type Database interface {
 	// OpenTrie opens the main account trie.
+	// OpenTrie打开main account的trie
 	OpenTrie(root common.Hash) (Trie, error)
 
 	// OpenStorageTrie opens the storage trie of an account.
+	// OpenStorageTrie打开一个account的storage trie
 	OpenStorageTrie(addrHash, root common.Hash) (Trie, error)
 
 	// CopyTrie returns an independent copy of the given trie.
 	CopyTrie(Trie) Trie
 
 	// ContractCode retrieves a particular contract's code.
+	// ContractCode获取一个特定的contract的code
 	ContractCode(addrHash, codeHash common.Hash) ([]byte, error)
 
 	// ContractCodeSize retrieves a particular contracts code's size.
 	ContractCodeSize(addrHash, codeHash common.Hash) (int, error)
 
 	// TrieDB retrieves the low level trie database used for data storage.
+	// TrieDB获取底层的trie database用于数据存储
 	TrieDB() *trie.Database
 }
 

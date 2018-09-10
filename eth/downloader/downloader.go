@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package downloader contains the manual full chain synchronisation.
+// downloader包含了完整的chain synchronisation
 package downloader
 
 import (
@@ -94,9 +95,12 @@ var (
 
 type Downloader struct {
 	mode SyncMode       // Synchronisation mode defining the strategy used (per sync cycle)
+	// Event multiplexer用于通知sync operation events
 	mux  *event.TypeMux // Event multiplexer to announce sync operation events
 
+	// 用于选择hashes进行下载的Scheduler
 	queue   *queue   // Scheduler for selecting the hashes to download
+	// download可以进行处理的一系列peers
 	peers   *peerSet // Set of active peers from which download can proceed
 	stateDB ethdb.Database
 
@@ -147,6 +151,7 @@ type Downloader struct {
 	syncInitHook     func(uint64, uint64)  // Method to call upon initiating a new sync run
 	bodyFetchHook    func([]*types.Header) // Method to call upon starting a block body fetch
 	receiptFetchHook func([]*types.Header) // Method to call upon starting a receipt fetch
+	// 当将blocks加入chain中时调用的方法
 	chainInsertHook  func([]*fetchResult)  // Method to call upon inserting a chain of blocks (possibly in multiple invocations)
 }
 
@@ -198,6 +203,7 @@ type BlockChain interface {
 }
 
 // New creates a new downloader to fetch hashes and blocks from remote peers.
+// New创建一个新的downloader用于从远程peers获取hashes和blocks
 func New(mode SyncMode, stateDb ethdb.Database, mux *event.TypeMux, chain BlockChain, lightchain LightChain, dropPeer peerDropFn) *Downloader {
 	if lightchain == nil {
 		lightchain = chain
@@ -270,6 +276,7 @@ func (d *Downloader) Synchronising() bool {
 
 // RegisterPeer injects a new download peer into the set of block source to be
 // used for fetching hashes and blocks from.
+// RegisterPeer将一个新的download peer注册到一系列的block source，用于获取hashes和blocks
 func (d *Downloader) RegisterPeer(id string, version int, peer Peer) error {
 	logger := log.New("peer", id)
 	logger.Trace("Registering sync peer")
@@ -339,6 +346,8 @@ func (d *Downloader) Synchronise(id string, head common.Hash, td *big.Int, mode 
 // synchronise will select the peer and use it for synchronising. If an empty string is given
 // it will use the best peer possible and synchronize if its TD is higher than our own. If any of the
 // checks fail an error will be returned. This method is synchronous
+// synchronise会选择一个peer用于同步，如果给定的是一个空的字符串，它会选择一个最好的peer并且进行同步，如果它的TD高于我们的
+// 如果任何检查失败了则会返回错误
 func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode SyncMode) error {
 	// Mock out the synchronisation if testing
 	if d.synchroniseMock != nil {
@@ -358,6 +367,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 	d.queue.Reset()
 	d.peers.Reset()
 
+	// 清空channel
 	for _, ch := range []chan bool{d.bodyWakeCh, d.receiptWakeCh} {
 		select {
 		case <-ch:
@@ -392,6 +402,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 	d.mode = mode
 
 	// Retrieve the origin peer and initiate the downloading process
+	// 获取origin peer并且初始化下载过程
 	p := d.peers.Peer(id)
 	if p == nil {
 		return errUnknownPeer
@@ -401,6 +412,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 
 // syncWithPeer starts a block synchronization based on the hash chain from the
 // specified peer and head hash.
+// syncWithPeer开始从给定的peer和head hash开始block synchronizaion
 func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.Int) (err error) {
 	d.mux.Post(StartEvent{})
 	defer func() {
@@ -421,12 +433,14 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 	}(time.Now())
 
 	// Look up the sync boundaries: the common ancestor and the target block
+	// 寻找共同的ancestor和target block
 	latest, err := d.fetchHeight(p)
 	if err != nil {
 		return err
 	}
 	height := latest.Number.Uint64()
 
+	// 获取和远程链共同的ancestor
 	origin, err := d.findAncestor(p, height)
 	if err != nil {
 		return err
@@ -476,6 +490,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 
 // spawnSync runs d.process and all given fetcher functions to completion in
 // separate goroutines, returning the first error that appears.
+// spawnSync运行d.process以及在独立的goroutine中运行所有给定的fetcher
 func (d *Downloader) spawnSync(fetchers []func() error) error {
 	errc := make(chan error, len(fetchers))
 	d.cancelWg.Add(len(fetchers))
@@ -543,6 +558,7 @@ func (d *Downloader) Terminate() {
 
 // fetchHeight retrieves the head header of the remote peer to aid in estimating
 // the total time a pending synchronisation would take.
+// fetchHeight获取remote peer的head header，用于预计pending synchronisation需要的时间
 func (d *Downloader) fetchHeight(p *peerConnection) (*types.Header, error) {
 	p.log.Debug("Retrieving remote chain height")
 
@@ -558,6 +574,7 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*types.Header, error) {
 			return nil, errCancelBlockFetch
 
 		case packet := <-d.headerCh:
+			// 从header channel中获取packet
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
@@ -589,6 +606,10 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*types.Header, error) {
 // on the correct chain, checking the top N links should already get us a match.
 // In the rare scenario when we ended up on a long reorganisation (i.e. none of
 // the head links match), we do a binary search to find the common ancestor.
+// findAncestor试着找到local chain和remote peers chain之间的common ancestor
+// 一般情况下，如果我们的node正在同步并且位于correct chain，检查top N links应该就能匹配
+// 在很少的情况下，如果我们最终需要一个long reorganisation（没有head匹配），则我们使用二分法
+// 寻找common ancestor
 func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, error) {
 	// Figure out the valid ancestor range to prevent rewrite attacks
 	floor, ceil := int64(-1), d.lightchain.CurrentHeader().Number.Uint64()
@@ -750,6 +771,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		return 0, errInvalidAncestor
 	}
 	p.log.Debug("Found common ancestor", "number", start, "hash", hash)
+	// start为共同的ancestor
 	return start, nil
 }
 
@@ -1323,6 +1345,7 @@ func (d *Downloader) processHeaders(origin uint64, pivot uint64, td *big.Int) er
 }
 
 // processFullSyncContent takes fetch results from the queue and imports them into the chain.
+// processFullSyncContent从queue中获取fetch results并且将它们加入chain中
 func (d *Downloader) processFullSyncContent() error {
 	for {
 		results := d.queue.Results(true)
@@ -1356,6 +1379,7 @@ func (d *Downloader) importBlockResults(results []*fetchResult) error {
 	)
 	blocks := make([]*types.Block, len(results))
 	for i, result := range results {
+		// 根据result构建block
 		blocks[i] = types.NewBlockWithHeader(result.Header).WithBody(result.Transactions, result.Uncles)
 	}
 	if index, err := d.blockchain.InsertChain(blocks); err != nil {
@@ -1523,7 +1547,9 @@ func (d *Downloader) commitPivotBlock(result *fetchResult) error {
 
 // DeliverHeaders injects a new batch of block headers received from a remote
 // node into the download schedule.
+// DeliverHeaders将一系列从remote node获取的block headers注入download schedule
 func (d *Downloader) DeliverHeaders(id string, headers []*types.Header) (err error) {
+	// 第二个参数为d.headerCh
 	return d.deliver(id, d.headerCh, &headerPack{id, headers}, headerInMeter, headerDropMeter)
 }
 
@@ -1568,6 +1594,7 @@ func (d *Downloader) deliver(id string, destCh chan dataPack, packet dataPack, i
 
 // qosTuner is the quality of service tuning loop that occasionally gathers the
 // peer latency statistics and updates the estimated request round trip time.
+// qosTuner是一个qos的条件循环，它会偶尔收集peer的延迟数据并且更新预计的round trip time
 func (d *Downloader) qosTuner() {
 	for {
 		// Retrieve the current median RTT and integrate into the previoust target RTT

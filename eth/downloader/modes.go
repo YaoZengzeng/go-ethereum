@@ -23,7 +23,9 @@ type SyncMode int
 
 const (
 	FullSync  SyncMode = iota // Synchronise the entire blockchain history from full blocks
+	// FastSync快速下载headers，只在chain header进行full sync
 	FastSync                  // Quickly download the headers, full sync only at the chain head
+	// LightSync只下载headers
 	LightSync                 // Download only the headers and terminate afterwards
 )
 

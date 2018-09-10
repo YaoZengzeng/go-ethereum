@@ -129,6 +129,7 @@ func WriteFastTrieProgress(db DatabaseWriter, count uint64) {
 }
 
 // ReadHeaderRLP retrieves a block header in its raw RLP database encoding.
+// ReadHeaderRLP从raw RLP database encoding中取出block header
 func ReadHeaderRLP(db DatabaseReader, hash common.Hash, number uint64) rlp.RawValue {
 	data, _ := db.Get(headerKey(number, hash))
 	return data
@@ -143,6 +144,7 @@ func HasHeader(db DatabaseReader, hash common.Hash, number uint64) bool {
 }
 
 // ReadHeader retrieves the block header corresponding to the hash.
+// ReadHeader根据哈希值返回block header
 func ReadHeader(db DatabaseReader, hash common.Hash, number uint64) *types.Header {
 	data := ReadHeaderRLP(db, hash, number)
 	if len(data) == 0 {
@@ -182,9 +184,11 @@ func WriteHeader(db DatabaseWriter, header *types.Header) {
 
 // DeleteHeader removes all block header data associated with a hash.
 func DeleteHeader(db DatabaseDeleter, hash common.Hash, number uint64) {
+	// 删除数据库中的header
 	if err := db.Delete(headerKey(number, hash)); err != nil {
 		log.Crit("Failed to delete header", "err", err)
 	}
+	// 删除hash到number的mapping
 	if err := db.Delete(headerNumberKey(hash)); err != nil {
 		log.Crit("Failed to delete hash to number mapping", "err", err)
 	}
@@ -256,6 +260,7 @@ func ReadTd(db DatabaseReader, hash common.Hash, number uint64) *big.Int {
 }
 
 // WriteTd stores the total difficulty of a block into the database.
+// WriteTd将一个block的td存入数据库
 func WriteTd(db DatabaseWriter, hash common.Hash, number uint64, td *big.Int) {
 	data, err := rlp.EncodeToBytes(td)
 	if err != nil {
@@ -294,6 +299,7 @@ func ReadReceipts(db DatabaseReader, hash common.Hash, number uint64) types.Rece
 }
 
 // WriteReceipts stores all the transaction receipts belonging to a block.
+// WriteReceipts写入所有属于一个block的transaction receipts
 func WriteReceipts(db DatabaseWriter, hash common.Hash, number uint64, receipts types.Receipts) {
 	// Convert the receipts into their storage form and serialize them
 	storageReceipts := make([]*types.ReceiptForStorage, len(receipts))

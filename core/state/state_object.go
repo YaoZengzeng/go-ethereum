@@ -131,6 +131,7 @@ func (c *stateObject) EncodeRLP(w io.Writer) error {
 }
 
 // setError remembers the first non-nil error it is called with.
+// setError记住第一个遇到的error
 func (self *stateObject) setError(err error) {
 	if self.dbErr == nil {
 		self.dbErr = err

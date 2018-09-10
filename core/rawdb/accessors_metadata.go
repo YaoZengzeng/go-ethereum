@@ -44,6 +44,7 @@ func WriteDatabaseVersion(db DatabaseWriter, version int) {
 }
 
 // ReadChainConfig retrieves the consensus settings based on the given genesis hash.
+// ReadChainConfig根据给定的genesis hash获取得到consensus settings
 func ReadChainConfig(db DatabaseReader, hash common.Hash) *params.ChainConfig {
 	data, _ := db.Get(configKey(hash))
 	if len(data) == 0 {

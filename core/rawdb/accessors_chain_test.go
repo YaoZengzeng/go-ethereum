@@ -68,6 +68,7 @@ func TestBodyStorage(t *testing.T) {
 	// Create a test body to move around the database and make sure it's really new
 	body := &types.Body{Uncles: []*types.Header{{Extra: []byte("test header")}}}
 
+	// 将body用Keccak256进行哈希
 	hasher := sha3.NewKeccak256()
 	rlp.Encode(hasher, body)
 	hash := common.BytesToHash(hasher.Sum(nil))
@@ -124,16 +125,19 @@ func TestBlockStorage(t *testing.T) {
 	if entry := ReadBlock(db, block.Hash(), block.NumberU64()); entry == nil {
 		t.Fatalf("Stored block not found")
 	} else if entry.Hash() != block.Hash() {
+		// 对于block验证block hash
 		t.Fatalf("Retrieved block mismatch: have %v, want %v", entry, block)
 	}
 	if entry := ReadHeader(db, block.Hash(), block.NumberU64()); entry == nil {
 		t.Fatalf("Stored header not found")
 	} else if entry.Hash() != block.Header().Hash() {
+		// 对于header验证header hash
 		t.Fatalf("Retrieved header mismatch: have %v, want %v", entry, block.Header())
 	}
 	if entry := ReadBody(db, block.Hash(), block.NumberU64()); entry == nil {
 		t.Fatalf("Stored body not found")
 	} else if types.DeriveSha(types.Transactions(entry.Transactions)) != types.DeriveSha(block.Transactions()) || types.CalcUncleHash(entry.Uncles) != types.CalcUncleHash(block.Uncles()) {
+		// 对于body验证transactions和uncles
 		t.Fatalf("Retrieved body mismatch: have %v, want %v", entry, block.Body())
 	}
 	// Delete the block and verify the execution
@@ -159,6 +163,7 @@ func TestPartialBlockStorage(t *testing.T) {
 		ReceiptHash: types.EmptyRootHash,
 	})
 	// Store a header and check that it's not recognized as a block
+	// 存储一个header并且检测其不会被识别为一个block
 	WriteHeader(db, block.Header())
 	if entry := ReadBlock(db, block.Hash(), block.NumberU64()); entry != nil {
 		t.Fatalf("Non existent block returned: %v", entry)
@@ -173,6 +178,7 @@ func TestPartialBlockStorage(t *testing.T) {
 	DeleteBody(db, block.Hash(), block.NumberU64())
 
 	// Store a header and a body separately and check reassembly
+	// 分别存入一个header核一个body，并且检测它们是否会合并为一个block
 	WriteHeader(db, block.Header())
 	WriteBody(db, block.Hash(), block.NumberU64(), block.Body())
 
@@ -265,6 +271,7 @@ func TestHeadStorage(t *testing.T) {
 }
 
 // Tests that receipts associated with a single block can be stored and retrieved.
+// 测试和单个block相关的receipts都可以被存储和获取
 func TestBlockReceiptStorage(t *testing.T) {
 	db := ethdb.NewMemDatabase()
 

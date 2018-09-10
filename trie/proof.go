@@ -30,10 +30,14 @@ import (
 // Prove constructs a merkle proof for key. The result contains all encoded nodes
 // on the path to the value at key. The value itself is also included in the last
 // node and can be retrieved by verifying the proof.
+// Prove为一个key构建merkle proof，result中包含了到达该key的路径上的所有encoded nodes
+// 它自身的value也被包含在最后一个node，可以被取出用于verifying the proof
 //
 // If the trie does not contain a value for key, the returned proof contains all
 // nodes of the longest existing prefix of the key (at least the root node), ending
 // with the node that proves the absence of the key.
+// 如果trie不包含这个key的value，则返回的proof中包含了该key的最长前缀路径中的所有nodes（至少
+// 包含root node），直到证明该key不存在的node
 func (t *Trie) Prove(key []byte, fromLevel uint, proofDb ethdb.Putter) error {
 	// Collect all nodes on the path to key.
 	key = keybytesToHex(key)
@@ -102,6 +106,8 @@ func (t *SecureTrie) Prove(key []byte, fromLevel uint, proofDb ethdb.Putter) err
 // VerifyProof checks merkle proofs. The given proof must contain the value for
 // key in a trie with the given root hash. VerifyProof returns an error if the
 // proof contains invalid trie nodes or the wrong value.
+// VerifyProof检测merkle proofs，给定的proof必须包含给定key的value，在给定的root hash的
+// trie上，VerifyProof返回error，如果proof包含了非法的trie node或者错误的value
 func VerifyProof(rootHash common.Hash, key []byte, proofDb DatabaseReader) (value []byte, nodes int, err error) {
 	key = keybytesToHex(key)
 	wantHash := rootHash

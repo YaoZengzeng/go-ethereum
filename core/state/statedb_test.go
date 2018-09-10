@@ -37,6 +37,7 @@ import (
 
 // Tests that updating a state trie does not leak any database writes prior to
 // actually committing the state.
+// 用于测试在真正提交state之前，state trie不会泄露任何的database writes
 func TestUpdateLeaks(t *testing.T) {
 	// Create an empty state database
 	db := ethdb.NewMemDatabase()
@@ -48,6 +49,7 @@ func TestUpdateLeaks(t *testing.T) {
 		state.AddBalance(addr, big.NewInt(int64(11*i)))
 		state.SetNonce(addr, uint64(42*i))
 		if i%2 == 0 {
+			// SetState就是设置key value值
 			state.SetState(addr, common.BytesToHash([]byte{i, i, i}), common.BytesToHash([]byte{i, i, i, i}))
 		}
 		if i%3 == 0 {
@@ -56,6 +58,7 @@ func TestUpdateLeaks(t *testing.T) {
 		state.IntermediateRoot(false)
 	}
 	// Ensure that no data was leaked into the database
+	// 确认database中没有key遗留
 	for _, key := range db.Keys() {
 		value, _ := db.Get(key)
 		t.Errorf("State leaked into database: %x -> %x", key, value)
@@ -64,6 +67,7 @@ func TestUpdateLeaks(t *testing.T) {
 
 // Tests that no intermediate state of an object is stored into the database,
 // only the one right before the commit.
+// 检测一个object的中间状态不会被保存到数据库，只有在commit之前的那个会
 func TestIntermediateLeaks(t *testing.T) {
 	// Create two state databases, one transitioning to the final state, the other final from the beginning
 	transDb := ethdb.NewMemDatabase()
@@ -88,9 +92,11 @@ func TestIntermediateLeaks(t *testing.T) {
 		modify(transState, common.Address{byte(i)}, i, 0)
 	}
 	// Write modifications to trie.
+	// 将修改写入trie
 	transState.IntermediateRoot(false)
 
 	// Overwrite all the data with new values in the transient database.
+	// 用新的value覆写transient database中的数据
 	for i := byte(0); i < 255; i++ {
 		modify(transState, common.Address{byte(i)}, i, 99)
 		modify(finalState, common.Address{byte(i)}, i, 99)
@@ -154,6 +160,7 @@ func TestCopy(t *testing.T) {
 	<-done
 
 	// Verify that the two states have been updated independently
+	// 确认两个state被独立地更新了
 	for i := byte(0); i < 255; i++ {
 		origObj := orig.GetOrNewStateObject(common.BytesToAddress([]byte{i}))
 		copyObj := copy.GetOrNewStateObject(common.BytesToAddress([]byte{i}))
@@ -204,6 +211,7 @@ type testAction struct {
 }
 
 // newTestAction creates a random action that changes state.
+// newTestAction创建一个随机的action用于改变state
 func newTestAction(addr common.Address, r *rand.Rand) testAction {
 	actions := []testAction{
 		{
@@ -332,6 +340,7 @@ func (test *snapshotTest) String() string {
 
 func (test *snapshotTest) run() bool {
 	// Run all actions and create snapshots.
+	// 运行所有的actions并且创建snapshots
 	var (
 		state, _     = New(common.Hash{}, NewDatabase(ethdb.NewMemDatabase()))
 		snapshotRevs = make([]int, len(test.snapshots))

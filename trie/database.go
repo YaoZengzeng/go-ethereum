@@ -138,7 +138,9 @@ type cachedNode struct {
 	node node   // Cached collapsed trie node, or raw rlp data
 	size uint16 // Byte size of the useful cached data
 
+	// 引用本节点的live nodes
 	parents  uint16                 // Number of live nodes referencing this one
+	// 本节点引用的孩子节点
 	children map[common.Hash]uint16 // External children referenced by this node
 
 	flushPrev common.Hash // Previous node in the flush-list
@@ -338,6 +340,7 @@ func (db *Database) insertPreimage(hash common.Hash, preimage []byte) {
 
 // node retrieves a cached trie node from memory, or returns nil if none can be
 // found in the memory cache.
+// node从内存中获取缓存的trie node，否则返回nil
 func (db *Database) node(hash common.Hash, cachegen uint16) node {
 	// Retrieve the node from cache if available
 	db.lock.RLock()
@@ -348,6 +351,7 @@ func (db *Database) node(hash common.Hash, cachegen uint16) node {
 		return node.obj(hash, cachegen)
 	}
 	// Content unavailable in memory, attempt to retrieve from disk
+	// 数据不在内存中，则从磁盘中获取
 	enc, err := db.diskdb.Get(hash[:])
 	if err != nil || enc == nil {
 		return nil
@@ -609,6 +613,7 @@ func (db *Database) Cap(limit common.StorageSize) error {
 
 // Commit iterates over all the children of a particular node, writes them out
 // to disk, forcefully tearing down all references in both directions.
+// Commit遍历特定节点的所有子节点，将它们写入磁盘
 //
 // As a side effect, all pre-images accumulated up to this point are also written.
 func (db *Database) Commit(node common.Hash, report bool) error {

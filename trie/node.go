@@ -34,12 +34,18 @@ type node interface {
 }
 
 type (
+	// 非叶子节点
 	fullNode struct {
+		// 最后一个节点用来存储自身的内容
 		Children [17]node // Actual trie node data to encode/decode (needs custom encoder)
 		flags    nodeFlag
 	}
+	// 叶子节点&扩展节点
 	shortNode struct {
 		Key   []byte
+		// 对于叶子节点，存储的是数据项的内容
+		// 对于扩展节点，存储的是其孩子节点在数据库中存储的索引值
+		// 或者是对孩子节点的引用
 		Val   node
 		flags nodeFlag
 	}
@@ -69,8 +75,14 @@ func (n *fullNode) copy() *fullNode   { copy := *n; return &copy }
 func (n *shortNode) copy() *shortNode { copy := *n; return &copy }
 
 // nodeFlag contains caching-related metadata about a node.
+// nodeFlag包含了一个node中和缓存相关的元数据
 type nodeFlag struct {
+	// 当hash字段不为空时，可以直接跳过本节点的计算过程而使用本字段的值
+	// 当节点变脏时，本字段置为空，清除内存中"太老的"未被修改的节点
+	// 防止占用的内存过多
 	hash  hashNode // cached hash of the node (may be nil)
+	// 当节点被第一次载入内存中，会被赋予一个计数值作为诞生标志，该标志
+	// 也会作为节点被驱逐的依据
 	gen   uint16   // cache generation counter
 	dirty bool     // whether the node has changes that must be written to the database
 }
@@ -126,6 +138,7 @@ func mustDecodeNode(hash, buf []byte, cachegen uint16) node {
 }
 
 // decodeNode parses the RLP encoding of a trie node.
+// decodeNode解析一个RLP编码的trie node
 func decodeNode(hash, buf []byte, cachegen uint16) (node, error) {
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF

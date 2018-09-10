@@ -33,6 +33,7 @@ import (
 type Log struct {
 	// Consensus fields:
 	// address of the contract that generated the event
+	// 产生这个event的contract的address
 	Address common.Address `json:"address" gencodec:"required"`
 	// list of topics provided by the contract.
 	Topics []common.Hash `json:"topics" gencodec:"required"`

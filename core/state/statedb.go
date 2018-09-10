@@ -354,6 +354,7 @@ func (self *StateDB) Suicide(addr common.Address) bool {
 //
 
 // updateStateObject writes the given object to the trie.
+// updateStateObject将给定的对象写入trie
 func (self *StateDB) updateStateObject(stateObject *stateObject) {
 	addr := stateObject.Address()
 	data, err := rlp.EncodeToBytes(stateObject)
@@ -402,6 +403,7 @@ func (self *StateDB) setStateObject(object *stateObject) {
 }
 
 // Retrieve a state object or create a new state object if nil.
+// 获取一个state object对象或者创建一个新的state object
 func (self *StateDB) GetOrNewStateObject(addr common.Address) *stateObject {
 	stateObject := self.getStateObject(addr)
 	if stateObject == nil || stateObject.deleted {
@@ -546,6 +548,7 @@ func (self *StateDB) GetRefund() uint64 {
 
 // Finalise finalises the state by removing the self destructed objects
 // and clears the journal as well as the refunds.
+// Finalise通过移除self destructed objects，清除journal异己refunds来finalises state
 func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 	for addr := range s.journal.dirties {
 		stateObject, exist := s.stateObjects[addr]
@@ -568,6 +571,7 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 		s.stateObjectsDirty[addr] = struct{}{}
 	}
 	// Invalidate journal because reverting across transactions is not allowed.
+	// 废纸journal，因为跨transaction revert是不允许的
 	s.clearJournalAndRefund()
 }
 
@@ -575,6 +579,7 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 // It is called in between transactions to get the root hash that
 // goes into transaction receipts.
 // IntermediateRoot计算state trie当前的root hash
+// 这会在transactions之间被调用，用于获取root hash存放进transaction receipts
 func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 	s.Finalise(deleteEmptyObjects)
 	return s.trie.Hash()
@@ -605,6 +610,7 @@ func (s *StateDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) 
 		s.stateObjectsDirty[addr] = struct{}{}
 	}
 	// Commit objects to the trie.
+	// 将所有的对象提交到trie
 	for addr, stateObject := range s.stateObjects {
 		_, isDirty := s.stateObjectsDirty[addr]
 		switch {
@@ -628,6 +634,7 @@ func (s *StateDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) 
 		delete(s.stateObjectsDirty, addr)
 	}
 	// Write trie changes.
+	// 写入trie的修改
 	root, err = s.trie.Commit(func(leaf []byte, parent common.Hash) error {
 		var account Account
 		if err := rlp.DecodeBytes(leaf, &account); err != nil {

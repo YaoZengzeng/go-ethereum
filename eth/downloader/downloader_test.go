@@ -105,6 +105,8 @@ func newTester() *downloadTester {
 // the returned hash chain is ordered head->parent. In addition, every 3rd block
 // contains a transaction and every 5th an uncle to allow testing correct block
 // reassembly.
+// makeChain创建一个有着n个block的链并且包含parent
+// 每3个block包含一个transaction，每5个block一个uncle用于测试正确的block reassembly
 func (dl *downloadTester) makeChain(n int, seed byte, parent *types.Block, parentReceipts types.Receipts, heavy bool) ([]common.Hash, map[common.Hash]*types.Header, map[common.Hash]*types.Block, map[common.Hash]types.Receipts) {
 	// Generate the block chain
 	blocks, receipts := core.GenerateChain(params.TestChainConfig, parent, ethash.NewFaker(), dl.peerDb, n, func(i int, block *core.BlockGen) {
@@ -115,6 +117,7 @@ func (dl *downloadTester) makeChain(n int, seed byte, parent *types.Block, paren
 			block.OffsetTime(-1)
 		}
 		// If the block number is multiple of 3, send a bonus transaction to the miner
+		// 如果block number是3的倍数，则送给miner一个bonus transaction
 		if parent == dl.genesis && i%3 == 0 {
 			signer := types.MakeSigner(params.TestChainConfig, block.Number())
 			tx, err := types.SignTx(types.NewTransaction(block.TxNonce(testAddress), common.Address{seed}, big.NewInt(1000), params.TxGas, nil, nil), signer, testKey)
@@ -124,6 +127,7 @@ func (dl *downloadTester) makeChain(n int, seed byte, parent *types.Block, paren
 			block.AddTx(tx)
 		}
 		// If the block number is a multiple of 5, add a bonus uncle to the block
+		// 如果block number是5的倍数，则给block添加一个bonus uncle
 		if i > 0 && i%5 == 0 {
 			block.AddUncle(&types.Header{
 				ParentHash: block.PrevBlock(i - 1).Hash(),
@@ -192,6 +196,7 @@ func (dl *downloadTester) terminate() {
 }
 
 // sync starts synchronizing with a remote peer, blocking until it completes.
+// sync开始从remote peer进行同步，会一直阻塞直到完成
 func (dl *downloadTester) sync(id string, td *big.Int, mode SyncMode) error {
 	dl.lock.RLock()
 	hash := dl.peerHashes[id][0]
@@ -205,6 +210,7 @@ func (dl *downloadTester) sync(id string, td *big.Int, mode SyncMode) error {
 	dl.lock.RUnlock()
 
 	// Synchronise with the chosen peer and ensure proper cleanup afterwards
+	// 从选定的peer进行同步并且保证之后进行适当的cleanup
 	err := dl.downloader.synchronise(id, hash, td, mode)
 	select {
 	case <-dl.downloader.cancelCh:
@@ -387,6 +393,7 @@ func (dl *downloadTester) Rollback(hashes []common.Hash) {
 }
 
 // newPeer registers a new block download source into the downloader.
+// newPeer将一个新的block download source注册到downloader
 func (dl *downloadTester) newPeer(id string, version int, hashes []common.Hash, headers map[common.Hash]*types.Header, blocks map[common.Hash]*types.Block, receipts map[common.Hash]types.Receipts) error {
 	return dl.newSlowPeer(id, version, hashes, headers, blocks, receipts, 0)
 }
@@ -394,6 +401,8 @@ func (dl *downloadTester) newPeer(id string, version int, hashes []common.Hash, 
 // newSlowPeer registers a new block download source into the downloader, with a
 // specific delay time on processing the network packets sent to it, simulating
 // potentially slow network IO.
+// newSlowPeer将一个新的block download source注册到downloader，对传送给他的network packets
+// 的处理指定一个延时时间，模拟可能出现的slow network IO
 func (dl *downloadTester) newSlowPeer(id string, version int, hashes []common.Hash, headers map[common.Hash]*types.Header, blocks map[common.Hash]*types.Block, receipts map[common.Hash]types.Receipts, delay time.Duration) error {
 	dl.lock.Lock()
 	defer dl.lock.Unlock()
@@ -518,6 +527,7 @@ func (dlp *downloadTesterPeer) RequestHeadersByNumber(origin uint64, amount int,
 	defer dlp.dl.lock.RUnlock()
 
 	// Gather the next batch of headers
+	// 收集下一批的headers
 	hashes := dlp.dl.peerHashes[dlp.id]
 	headers := dlp.dl.peerHeaders[dlp.id]
 	result := make([]*types.Header, 0, amount)
@@ -605,6 +615,7 @@ func (dlp *downloadTesterPeer) RequestNodeData(hashes []common.Hash) error {
 
 // assertOwnChain checks if the local chain contains the correct number of items
 // of the various chain components.
+// assertOwnChain检测是否local chain包含了正确数目的各种chain components
 func assertOwnChain(t *testing.T, tester *downloadTester, length int) {
 	assertOwnForkedChain(t, tester, 1, []int{length})
 }
@@ -659,6 +670,7 @@ func assertOwnForkedChain(t *testing.T, tester *downloadTester, common int, leng
 // Tests that simple synchronization against a canonical chain works correctly.
 // In this test common ancestor lookup should be short circuited and not require
 // binary searching.
+// 测试对于一个canonical chain的同步是正常的
 func TestCanonicalSynchronisation62(t *testing.T)      { testCanonicalSynchronisation(t, 62, FullSync) }
 func TestCanonicalSynchronisation63Full(t *testing.T)  { testCanonicalSynchronisation(t, 63, FullSync) }
 func TestCanonicalSynchronisation63Fast(t *testing.T)  { testCanonicalSynchronisation(t, 63, FastSync) }
@@ -673,12 +685,14 @@ func testCanonicalSynchronisation(t *testing.T, protocol int, mode SyncMode) {
 	defer tester.terminate()
 
 	// Create a small enough block chain to download
+	// 创建一个足够小的block chain用于下载, blockCacheItems用于1024
 	targetBlocks := blockCacheItems - 15
 	hashes, headers, blocks, receipts := tester.makeChain(targetBlocks, 0, tester.genesis, nil, false)
 
 	tester.newPeer("peer", protocol, hashes, headers, blocks, receipts)
 
 	// Synchronise with the peer and make sure all relevant data was retrieved
+	// 和peer进行同步，确保所有相关的data都已获取
 	if err := tester.sync("peer", nil, mode); err != nil {
 		t.Fatalf("failed to synchronise blocks: %v", err)
 	}

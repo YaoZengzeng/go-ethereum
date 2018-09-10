@@ -153,6 +153,8 @@ func (r *Receipt) Size() common.StorageSize {
 
 // ReceiptForStorage is a wrapper around a Receipt that flattens and parses the
 // entire content of a receipt, as opposed to only the consensus fields originally.
+// ReceiptForStorage是一个Receipt的wrapper, 它扁平化并且解析一个receipt中的所有内容
+// 和原来只解析其中的consensus字段不同
 type ReceiptForStorage Receipt
 
 // EncodeRLP implements rlp.Encoder, and flattens all content fields of a receipt

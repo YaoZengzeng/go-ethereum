@@ -53,6 +53,8 @@ type fetchRequest struct {
 
 // fetchResult is a struct collecting partial results from data fetchers until
 // all outstanding pieces complete and the result as a whole can be processed.
+// fetchResult是一个从data fetcher中收集partial results的结构直到所有的outstanding
+// pieces都完成，result作为一个整体可以被处理
 type fetchResult struct {
 	Pending int         // Number of data fetches still pending
 	Hash    common.Hash // Hash of the header to prevent recalculating

@@ -62,9 +62,11 @@ func compactToHex(compact []byte) []byte {
 	return base[chop:]
 }
 
+// 将bytes转换为Hex
 func keybytesToHex(str []byte) []byte {
 	l := len(str)*2 + 1
 	var nibbles = make([]byte, l)
+	// 将一个字节拆分为两个字节
 	for i, b := range str {
 		nibbles[i*2] = b / 16
 		nibbles[i*2+1] = b % 16
