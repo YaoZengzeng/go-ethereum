@@ -78,6 +78,7 @@ var (
 	}
 	configdirFlag = cli.StringFlag{
 		Name:  "configdir",
+		// 默认为$HOME/.clef
 		Value: DefaultConfigDir(),
 		Usage: "Directory for Clef configuration",
 	}
@@ -88,6 +89,7 @@ var (
 	}
 	signerSecretFlag = cli.StringFlag{
 		Name:  "signersecret",
+		// 一个文件存放password，用于加密Clef credentials，比如keystore credentials和ruleset hash
 		Usage: "A file containing the password used to encrypt Clef credentials, e.g. keystore credentials and ruleset hash",
 	}
 	dBFlag = cli.StringFlag{
@@ -241,10 +243,16 @@ This is required to be able to store credentials, such as :
 * Passwords for keystores (used by rule engine)
 * Storage for javascript rules
 * Hash of rule-file
+master seed对于存储credentials是必须的，例如：
+* 对于keystores的password (由rule engine使用)
+* javascript rules的存储
+* 以及rule-file的哈希
+
 
 You should treat that file with utmost secrecy, and make a backup of it. 
 NOTE: This file does not contain your accounts. Those need to be backed up separately!
-
+对于这个file应该有着最高的保密级别，并保持备份
+NOTE: 这个文件不包含你的accounts，这些都应该分开备份
 `)
 	return nil
 }
@@ -262,11 +270,14 @@ func attestFile(ctx *cli.Context) error {
 	}
 	configDir := ctx.String(configdirFlag.Name)
 	vaultLocation := filepath.Join(configDir, common.Bytes2Hex(crypto.Keccak256([]byte("vault"), stretchedKey)[:10]))
+	// 对"config" + master seed进行加密
 	confKey := crypto.Keccak256([]byte("config"), stretchedKey)
 
 	// Initialize the encrypted storages
+	// 初始化encrypted storages
 	configStorage := storage.NewAESEncryptedStorage(filepath.Join(vaultLocation, "config.json"), confKey)
 	val := ctx.Args().First()
+	// 将rule.js的哈希值进行存储
 	configStorage.Put("ruleset_sha256", val)
 	log.Info("Ruleset attestation updated", "sha256", val)
 	return nil
@@ -533,6 +544,7 @@ func readMasterKey(ctx *cli.Context) ([]byte, error) {
 		return nil, fmt.Errorf("master key of insufficient length, expected >255 bytes, got %d", len(masterKey))
 	}
 	// Create vault location
+	// 在.clef下创建一个目录
 	vaultLocation := filepath.Join(configDir, common.Bytes2Hex(crypto.Keccak256([]byte("vault"), masterKey)[:10]))
 	err = os.Mkdir(vaultLocation, 0700)
 	if err != nil && !os.IsExist(err) {
