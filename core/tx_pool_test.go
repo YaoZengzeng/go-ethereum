@@ -175,6 +175,8 @@ func (c *testChain) State() (*state.StateDB, error) {
 // This test simulates a scenario where a new block is imported during a
 // state reset and tests whether the pending state is in sync with the
 // block head event that initiated the resetState().
+// 这个test模拟了这样一种长郡，一个新的block在state reset的时候被引入，检测pending state
+// 是否和初始化resetState()的block head event同步
 func TestStateChangeDuringTransactionPoolReset(t *testing.T) {
 	t.Parallel()
 

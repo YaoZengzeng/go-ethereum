@@ -66,6 +66,7 @@ type fetchResult struct {
 }
 
 // queue represents hashes that are either need fetching or are being fetched
+// queue代表了那些需要fetching或者已经fetched的hashes
 type queue struct {
 	mode SyncMode // Synchronisation mode to decide on the block parts to schedule for fetching
 
@@ -308,6 +309,7 @@ func (q *queue) RetrieveHeaders() ([]*types.Header, int) {
 
 // Schedule adds a set of headers for the download queue for scheduling, returning
 // the new headers encountered.
+// Schedule增加一系列的headers被download queue用于调度，返回新遇到的headers
 func (q *queue) Schedule(headers []*types.Header, from uint64) []*types.Header {
 	q.lock.Lock()
 	defer q.lock.Unlock()
@@ -316,6 +318,7 @@ func (q *queue) Schedule(headers []*types.Header, from uint64) []*types.Header {
 	inserts := make([]*types.Header, 0, len(headers))
 	for _, header := range headers {
 		// Make sure chain order is honoured and preserved throughout
+		// 确保chain order
 		hash := header.Hash()
 		if header.Number == nil || header.Number.Uint64() != from {
 			log.Warn("Header broke chain ordering", "number", header.Number, "hash", hash, "expected", from)
@@ -326,6 +329,7 @@ func (q *queue) Schedule(headers []*types.Header, from uint64) []*types.Header {
 			break
 		}
 		// Make sure no duplicate requests are executed
+		// 确保没有重复的request
 		if _, ok := q.blockTaskPool[hash]; ok {
 			log.Warn("Header  already scheduled for block fetch", "number", header.Number, "hash", hash)
 			continue
@@ -876,6 +880,7 @@ func (q *queue) deliver(id string, taskPool map[common.Hash]*types.Header, taskQ
 
 // Prepare configures the result cache to allow accepting and caching inbound
 // fetch results.
+// Prepare配置result cache用于接收并且缓存拉取的results
 func (q *queue) Prepare(offset uint64, mode SyncMode) {
 	q.lock.Lock()
 	defer q.lock.Unlock()

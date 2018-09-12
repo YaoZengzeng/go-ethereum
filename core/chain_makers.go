@@ -57,8 +57,10 @@ type BlockGen struct {
 func (b *BlockGen) SetCoinbase(addr common.Address) {
 	if b.gasPool != nil {
 		if len(b.txs) > 0 {
+			// coinbase必须在添加transactions之前被设置
 			panic("coinbase must be set before adding transactions")
 		}
+		// coinbase只能被设置一次
 		panic("coinbase can only be set once")
 	}
 	b.header.Coinbase = addr
@@ -72,18 +74,25 @@ func (b *BlockGen) SetExtra(data []byte) {
 
 // AddTx adds a transaction to the generated block. If no coinbase has
 // been set, the block's coinbase is set to the zero address.
+// AddTx增加一个transaction到generated block，如果没有设置coinbase，则block的
+// coinbase会被设置为zero address
 //
 // AddTx panics if the transaction cannot be executed. In addition to
 // the protocol-imposed limitations (gas limit, etc.), there are some
 // further limitations on the content of transactions that can be
 // added. Notably, contract code relying on the BLOCKHASH instruction
 // will panic during execution.
+// 如果transaction不能被执行，则AddTx会panic，除了协议强加的限制（例如gas limit）
+// transactions的content能添加的内容也有限制，特别的，依赖BLOCKHASH指令的contract
+// code可能在执行过程中panic
 func (b *BlockGen) AddTx(tx *types.Transaction) {
 	b.AddTxWithChain(nil, tx)
 }
 
 // AddTxWithChain adds a transaction to the generated block. If no coinbase has
 // been set, the block's coinbase is set to the zero address.
+// AddTxWithChain增加一个transaction到generated block，如果没有设置coinbase, 则block
+// 的coinbase会被设置为zero address
 //
 // AddTxWithChain panics if the transaction cannot be executed. In addition to
 // the protocol-imposed limitations (gas limit, etc.), there are some
@@ -95,10 +104,12 @@ func (b *BlockGen) AddTxWithChain(bc *BlockChain, tx *types.Transaction) {
 		b.SetCoinbase(common.Address{})
 	}
 	b.statedb.Prepare(tx.Hash(), common.Hash{}, len(b.txs))
+	// 执行transaction，获取receipt
 	receipt, _, err := ApplyTransaction(b.config, bc, &b.header.Coinbase, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, vm.Config{})
 	if err != nil {
 		panic(err)
 	}
+	// 扩展BlockGen的txs和receipts
 	b.txs = append(b.txs, tx)
 	b.receipts = append(b.receipts, receipt)
 }
@@ -186,6 +197,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		blockchain, _ := NewBlockChain(db, nil, config, engine, vm.Config{})
 		defer blockchain.Stop()
 
+		// 创建BlockGen
 		b := &BlockGen{i: i, parent: parent, chain: blocks, chainReader: blockchain, statedb: statedb, config: config, engine: engine}
 		b.header = makeHeader(b.chainReader, parent, statedb, b.engine)
 
@@ -208,6 +220,7 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		}
 
 		if b.engine != nil {
+			// 将header, transactions, uncles以及receipts组装成一个block
 			block, _ := b.engine.Finalize(b.chainReader, b.header, statedb, b.txs, b.uncles, b.receipts)
 			// Write state changes to db
 			// 将state changes写会db
@@ -222,7 +235,9 @@ func GenerateChain(config *params.ChainConfig, parent *types.Block, engine conse
 		}
 		return nil, nil
 	}
+	// 创建n个block
 	for i := 0; i < n; i++ {
+		// 创建一个statedb
 		statedb, err := state.New(parent.Root(), state.NewDatabase(db))
 		if err != nil {
 			panic(err)

@@ -134,6 +134,7 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 		receipt.ContractAddress = crypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
 	}
 	// Set the receipt logs and create a bloom for filtering
+	// 从statedb中获取receipt logs并且创建一个bloom用于filtering
 	receipt.Logs = statedb.GetLogs(tx.Hash())
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 

@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package fetcher contains the block announcement based synchronisation.
+// fetcher包提供了一个基于block announcement的同步
 package fetcher
 
 import (

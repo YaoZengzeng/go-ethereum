@@ -93,6 +93,9 @@ type CacheConfig struct {
 // important to note that GetBlock can return any block and does not need to be
 // included in the canonical one where as GetBlockByNumber always represents the
 // canonical chain.
+// BlockChain同时可以用于返回包含在数据库中的any chain，以及代表canonical chain的blocks
+// 值得注意的是GetBlock可以返回任何block，该block并不一定要包含在canonical汇总
+// 而通过GetBlockByNumber返回的一定是来自canonical chain
 type BlockChain struct {
 	chainConfig *params.ChainConfig // Chain & network configuration
 	cacheConfig *CacheConfig        // Cache configuration for pruning

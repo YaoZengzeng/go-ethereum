@@ -56,12 +56,14 @@ type downloadTester struct {
 	stateDb ethdb.Database // Database used by the tester for syncing from peers
 	peerDb  ethdb.Database // Database of the peers containing all data
 
+	// 以下字段为属于tester的hash chain, headers, blocks, receipts以及td
 	ownHashes   []common.Hash                  // Hash chain belonging to the tester
 	ownHeaders  map[common.Hash]*types.Header  // Headers belonging to the tester
 	ownBlocks   map[common.Hash]*types.Block   // Blocks belonging to the tester
 	ownReceipts map[common.Hash]types.Receipts // Receipts belonging to the tester
 	ownChainTd  map[common.Hash]*big.Int       // Total difficulties of the blocks in the local chain
 
+	// 以下字段为属于不同的test peers的hash chain, headers, blocks, receipts以及td
 	peerHashes   map[string][]common.Hash                  // Hash chain belonging to different test peers
 	peerHeaders  map[string]map[common.Hash]*types.Header  // Headers belonging to different test peers
 	peerBlocks   map[string]map[common.Hash]*types.Block   // Blocks belonging to different test peers
@@ -201,6 +203,7 @@ func (dl *downloadTester) sync(id string, td *big.Int, mode SyncMode) error {
 	dl.lock.RLock()
 	hash := dl.peerHashes[id][0]
 	// If no particular TD was requested, load from the peer's blockchain
+	// 如果没有请求特定的TD，则从peer的blockchain中获取
 	if td == nil {
 		td = big.NewInt(1)
 		if diff, ok := dl.peerChainTds[id][hash]; ok {
@@ -465,6 +468,7 @@ func (dl *downloadTester) dropPeer(id string) {
 	dl.downloader.UnregisterPeer(id)
 }
 
+// downloadTesterPeer是download test中一个模拟的peer
 type downloadTesterPeer struct {
 	dl    *downloadTester
 	id    string
@@ -520,6 +524,8 @@ func (dlp *downloadTesterPeer) RequestHeadersByHash(origin common.Hash, amount i
 // RequestHeadersByNumber constructs a GetBlockHeaders function based on a numbered
 // origin; associated with a particular peer in the download tester. The returned
 // function can be used to retrieve batches of headers from the particular peer.
+// RequestHeadersByNumber基于一个numbered origin构建一个GetBlockHeaders函数，并且和download
+// tester中一个特定的peer相关联，返回的函数可以用于从特定的peer拉取batches of headers
 func (dlp *downloadTesterPeer) RequestHeadersByNumber(origin uint64, amount int, skip int, reverse bool) error {
 	dlp.waitDelay()
 
@@ -539,6 +545,7 @@ func (dlp *downloadTesterPeer) RequestHeadersByNumber(origin uint64, amount int,
 	// Delay delivery a bit to allow attacks to unfold
 	go func() {
 		time.Sleep(time.Millisecond)
+		// 隔一小段时间，将获取到的header发送给downloader
 		dlp.dl.downloader.DeliverHeaders(dlp.id, result)
 	}()
 	return nil
@@ -713,6 +720,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 	defer tester.terminate()
 
 	// Create a long block chain to download and the tester
+	// blockCacheItems为1024
 	targetBlocks := 8 * blockCacheItems
 	hashes, headers, blocks, receipts := tester.makeChain(targetBlocks, 0, tester.genesis, nil, false)
 
@@ -722,6 +730,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 	blocked, proceed := uint32(0), make(chan struct{})
 	tester.downloader.chainInsertHook = func(results []*fetchResult) {
 		atomic.StoreUint32(&blocked, uint32(len(results)))
+		// 等待下面的for循环将新插入的block处理完毕
 		<-proceed
 	}
 	// Start a synchronisation concurrently
@@ -730,6 +739,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 		errc <- tester.sync("peer", nil, mode)
 	}()
 	// Iteratively take some blocks, always checking the retrieval count
+	// 遍历一些blocks，并且总是检查retrieval count
 	for {
 		// Check the retrieval count synchronously (! reason for this ugly block)
 		tester.lock.RLock()
@@ -753,7 +763,9 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 					//}
 				}
 			}
+			// frozen是正被阻塞的block
 			frozen = int(atomic.LoadUint32(&blocked))
+			// 位于tester.ownBlocks是已经接收到的block
 			retrieved = len(tester.ownBlocks)
 			tester.downloader.queue.lock.Unlock()
 			tester.lock.Unlock()
@@ -778,6 +790,7 @@ func testThrottling(t *testing.T, protocol int, mode SyncMode) {
 		}
 	}
 	// Check that we haven't pulled more blocks than available
+	// 确认我们没有获得比available更多的blocks
 	assertOwnChain(t, tester, targetBlocks+1)
 	if err := <-errc; err != nil {
 		t.Fatalf("block synchronization failed: %v", err)

@@ -527,6 +527,7 @@ func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header
 	// Accumulate any block and uncle rewards and commit the final state root
 	// 累加所有的block以及uncle rewards并且提交final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
+	// 设置header的Root
 	header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
 
 	// Header seems complete, assemble into a block and return
@@ -553,6 +554,7 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 		blockReward = ByzantiumBlockReward
 	}
 	// Accumulate the rewards for the miner and any included uncles
+	// 累计miner的rewards以及包含的uncles
 	reward := new(big.Int).Set(blockReward)
 	r := new(big.Int)
 	for _, uncle := range uncles {
@@ -560,10 +562,12 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 		r.Sub(r, header.Number)
 		r.Mul(r, blockReward)
 		r.Div(r, big8)
+		// 增加uncle的balance
 		state.AddBalance(uncle.Coinbase, r)
 
 		r.Div(blockReward, big32)
 		reward.Add(reward, r)
 	}
+	// 增加coinbase的reward
 	state.AddBalance(header.Coinbase, reward)
 }

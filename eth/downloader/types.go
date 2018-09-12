@@ -26,6 +26,7 @@ import (
 type peerDropFn func(id string)
 
 // dataPack is a data message returned by a peer for some query.
+// dataPack是一个peer返回的data message用于一些查询
 type dataPack interface {
 	PeerId() string
 	Items() int

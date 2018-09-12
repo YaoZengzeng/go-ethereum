@@ -213,6 +213,7 @@ func NewBlock(header *Header, txs []*Transaction, uncles []*Header, receipts []*
 	b := &Block{header: CopyHeader(header), td: new(big.Int)}
 
 	// TODO: panic if len(txs) != len(receipts)
+	// 设置block的header的transaction hash, receipt hash以及uncle hash
 	if len(txs) == 0 {
 		b.header.TxHash = EmptyRootHash
 	} else {

@@ -16,6 +16,7 @@
 
 // signer is a utility that can be used so sign transactions and
 // arbitrary data.
+// signer是一个用于对transactions以及任意的数据进行签名的工具
 package main
 
 import (
@@ -132,6 +133,7 @@ var (
 		Description: `
 The init command generates a master seed which Clef can use to store credentials and data needed for 
 the rule-engine to work.`,
+// init命令创建一个master seed，Clef可以用于存储credentials以及rule-engine能够工作所需的数据
 	}
 	attestCommand = cli.Command{
 		Action:    utils.MigrateFlags(attestFile),
@@ -149,6 +151,8 @@ incoming requests.
 
 Whenever you make an edit to the rule file, you need to use attestation to tell 
 Clef that the file is 'safe' to execute.`,
+// attest命令存储了rule.js的sha256，rule.js中存储了用于自动处理incoming requests的规则
+// 无论何时你对rule file进行了编辑，都要使用attestation告诉clef，这个文件的执行是安全的
 	}
 
 	addCredentialCommand = cli.Command{
@@ -210,6 +214,7 @@ func initializeSecrets(c *cli.Context) error {
 	configDir := c.String(configdirFlag.Name)
 
 	masterSeed := make([]byte, 256)
+	// 创建master seed，即256个字节的随机数
 	n, err := io.ReadFull(rand.Reader, masterSeed)
 	if err != nil {
 		return err
@@ -225,6 +230,7 @@ func initializeSecrets(c *cli.Context) error {
 	if _, err := os.Stat(location); err == nil {
 		return fmt.Errorf("file %v already exists, will not overwrite", location)
 	}
+	// 将master seed写入secrets.dat
 	err = ioutil.WriteFile(location, masterSeed, 0700)
 	if err != nil {
 		return err
@@ -554,6 +560,7 @@ func checkFile(filename string) error {
 }
 
 // confirm displays a text and asks for user confirmation
+// confirm展示一个text并且请求用于的确认
 func confirm(text string) bool {
 	fmt.Printf(text)
 	fmt.Printf("\nEnter 'ok' to proceed:\n>")
