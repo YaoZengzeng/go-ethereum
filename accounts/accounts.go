@@ -28,6 +28,7 @@ import (
 
 // Account represents an Ethereum account located at a specific location defined
 // by the optional URL field.
+// Account代表了一个以太坊账户，存在于URL指定的特定的位置
 type Account struct {
 	Address common.Address `json:"address"` // Ethereum account address derived from the key
 	URL     URL            `json:"url"`     // Optional resource locator within a backend
@@ -130,6 +131,7 @@ type Wallet interface {
 
 // Backend is a "wallet provider" that may contain a batch of accounts they can
 // sign transactions with and upon request, do so.
+// Backend是一个"wallet provider"，其中包含了一系列的accounts，它们可以sign一个transactions
 type Backend interface {
 	// Wallets retrieves the list of wallets the backend is currently aware of.
 	//

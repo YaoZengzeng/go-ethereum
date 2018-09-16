@@ -26,6 +26,8 @@ import (
 
 // Manager is an overarching account manager that can communicate with various
 // backends for signing transactions.
+// Manager是一个overarching account manager，它能够和各种backends进行交互，用来对transactions
+// 进行签名
 type Manager struct {
 	backends map[reflect.Type][]Backend // Index of backends currently registered
 	updaters []event.Subscription       // Wallet update subscriptions for all backends
@@ -40,6 +42,7 @@ type Manager struct {
 
 // NewManager creates a generic account manager to sign transaction via various
 // supported backends.
+// NewManager创建一个通用的account manager，通过各种支持的backends对transaction进行sign
 func NewManager(backends ...Backend) *Manager {
 	// Retrieve the initial list of wallets from the backends and sort by URL
 	var wallets []Wallet
@@ -47,6 +50,7 @@ func NewManager(backends ...Backend) *Manager {
 		wallets = merge(wallets, backend.Wallets()...)
 	}
 	// Subscribe to wallet notifications from all backends
+	// 订阅来自各个backends的wallet notifications
 	updates := make(chan WalletEvent, 4*len(backends))
 
 	subs := make([]event.Subscription, len(backends))
@@ -79,6 +83,7 @@ func (am *Manager) Close() error {
 
 // update is the wallet event loop listening for notifications from the backends
 // and updating the cache of wallets.
+// update是wallet event loop，用于监听来自各个backends的通知并且更新wallets缓存
 func (am *Manager) update() {
 	// Close all subscriptions when the manager terminates
 	defer func() {

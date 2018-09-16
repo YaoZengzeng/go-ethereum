@@ -48,6 +48,7 @@ func init() {
 var (
 	passphraseFlag = cli.StringFlag{
 		Name:  "passwordfile",
+		// 用于存储keyfile的passphrase的文件
 		Usage: "the file that contains the passphrase for the keyfile",
 	}
 	jsonFlag = cli.BoolFlag{

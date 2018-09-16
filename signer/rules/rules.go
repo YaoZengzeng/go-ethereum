@@ -48,10 +48,12 @@ func consoleOutput(call otto.FunctionCall) otto.Value {
 
 // rulesetUI provides an implementation of SignerUI that evaluates a javascript
 // file for each defined UI-method
+// rulesetUI提供了一个SignalUI的实现
 type rulesetUI struct {
 	next        core.SignerUI // The next handler, for manual processing
 	storage     storage.Storage
 	credentials storage.Storage
+	// jsRules就是rule.js文件的内容
 	jsRules     string // The rules to use
 }
 

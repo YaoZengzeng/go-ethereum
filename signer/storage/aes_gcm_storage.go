@@ -38,14 +38,18 @@ type storedCredential struct {
 
 // AESEncryptedStorage is a storage type which is backed by a json-faile. The json-file contains
 // key-value mappings, where the keys are _not_ encrypted, only the values are.
+// AESEncryptedStorage是一个由json-file支持的存储类型
+// json-file包含了键值对的映射，其中keys是不被加密的，只有value是加密的
 type AESEncryptedStorage struct {
 	// File to read/write credentials
+	// 用来读写credentials的文件
 	filename string
 	// Key stored in base64
 	key []byte
 }
 
 // NewAESEncryptedStorage creates a new encrypted storage backed by the given file/key
+// NewAESEncryptedStorage用给定的file/key创建一个新的加密存储
 func NewAESEncryptedStorage(filename string, key []byte) *AESEncryptedStorage {
 	return &AESEncryptedStorage{
 		filename: filename,
@@ -63,6 +67,7 @@ func (s *AESEncryptedStorage) Put(key, value string) {
 		log.Warn("Failed to read encrypted storage", "err", err, "file", s.filename)
 		return
 	}
+	// 对key和value进行加密
 	ciphertext, iv, err := encrypt(s.key, []byte(value))
 	if err != nil {
 		log.Warn("Failed to encrypt entry", "err", err)
@@ -118,6 +123,7 @@ func (s *AESEncryptedStorage) readEncryptedStorage() (map[string]storedCredentia
 }
 
 // writeEncryptedStorage write the file with encrypted creds
+// writeEncryptedStorage将encrypted creds写入文件
 func (s *AESEncryptedStorage) writeEncryptedStorage(creds map[string]storedCredential) error {
 	raw, err := json.Marshal(creds)
 	if err != nil {

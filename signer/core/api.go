@@ -37,6 +37,7 @@ import (
 )
 
 // ExternalAPI defines the external API through which signing requests are made.
+// ExternalAPI定义了external API，可以通过它对请求进行signing
 type ExternalAPI interface {
 	// List available accounts
 	List(ctx context.Context) (Accounts, error)
@@ -55,8 +56,10 @@ type ExternalAPI interface {
 }
 
 // SignerUI specifies what method a UI needs to implement to be able to be used as a UI for the signer
+// SignerUI指定了一个UI需要实现的方法，从而能够被signer用为signer
 type SignerUI interface {
 	// ApproveTx prompt the user for confirmation to request to sign Transaction
+	// ApproveTx提示用户确认对于sign Transaction的请求
 	ApproveTx(request *SignTxRequest) (SignTxResponse, error)
 	// ApproveSignData prompt the user for confirmation to request to sign data
 	ApproveSignData(request *SignDataRequest) (SignDataResponse, error)
@@ -82,6 +85,7 @@ type SignerUI interface {
 }
 
 // SignerAPI defines the actual implementation of ExternalAPI
+// SignerAPI定义了ExternalAPI的真实实现
 type SignerAPI struct {
 	chainID   *big.Int
 	am        *accounts.Manager
@@ -194,6 +198,9 @@ var ErrRequestDenied = errors.New("Request denied")
 // key that is generated when a new Account is created.
 // noUSB disables USB support that is required to support hardware devices such as
 // ledger and trezor.
+// NewSignerAPI创建一个新的API用于Account Management
+// ksLocation指定了存放password的目录，用于保护一个新的Account创建时产生的private key
+// noUSB禁止了USB支持，这会在支持ledger以及trezor时候的需要
 func NewSignerAPI(chainID int64, ksLocation string, noUSB bool, ui SignerUI, abidb *AbiDb, lightKDF bool) *SignerAPI {
 	var (
 		backends []accounts.Backend
@@ -203,6 +210,7 @@ func NewSignerAPI(chainID int64, ksLocation string, noUSB bool, ui SignerUI, abi
 		n, p = keystore.LightScryptN, keystore.LightScryptP
 	}
 	// support password based accounts
+	// 支持基于password的accounts
 	if len(ksLocation) > 0 {
 		backends = append(backends, keystore.NewKeyStore(ksLocation, n, p))
 	}

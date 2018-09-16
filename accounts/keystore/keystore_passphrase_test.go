@@ -29,6 +29,7 @@ const (
 )
 
 // Tests that a json key file can be decrypted and encrypted in multiple rounds.
+// 检测一个json key file可以被加密解密多次
 func TestKeyEncryptDecrypt(t *testing.T) {
 	keyjson, err := ioutil.ReadFile("testdata/very-light-scrypt.json")
 	if err != nil {
@@ -40,10 +41,12 @@ func TestKeyEncryptDecrypt(t *testing.T) {
 	// Do a few rounds of decryption and encryption
 	for i := 0; i < 3; i++ {
 		// Try a bad password first
+		// 首先用错误的密码进行解密
 		if _, err := DecryptKey(keyjson, password+"bad"); err == nil {
 			t.Errorf("test %d: json key decrypted with bad password", i)
 		}
 		// Decrypt with the correct password
+		// 之后用正确的密码进行解密，获取到key
 		key, err := DecryptKey(keyjson, password)
 		if err != nil {
 			t.Fatalf("test %d: json key failed to decrypt: %v", i, err)

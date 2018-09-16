@@ -42,6 +42,7 @@ var (
 var errInvalidPubkey = errors.New("invalid secp256k1 public key")
 
 // Keccak256 calculates and returns the Keccak256 hash of the input data.
+// Keccak256计算并且返回输入数据的Keccak256哈希值
 func Keccak256(data ...[]byte) []byte {
 	d := sha3.NewKeccak256()
 	for _, b := range data {
@@ -83,6 +84,7 @@ func CreateAddress2(b common.Address, salt common.Hash, code []byte) common.Addr
 }
 
 // ToECDSA creates a private key with the given D value.
+// ToECDSA用一个给定的切片d，创建一个private key
 func ToECDSA(d []byte) (*ecdsa.PrivateKey, error) {
 	return toECDSA(d, true)
 }
@@ -123,6 +125,7 @@ func toECDSA(d []byte, strict bool) (*ecdsa.PrivateKey, error) {
 }
 
 // FromECDSA exports a private key into a binary dump.
+// FromECDSA将private key转换为一个byte切片
 func FromECDSA(priv *ecdsa.PrivateKey) []byte {
 	if priv == nil {
 		return nil
@@ -181,6 +184,7 @@ func SaveECDSA(file string, key *ecdsa.PrivateKey) error {
 	return ioutil.WriteFile(file, []byte(k), 0600)
 }
 
+// 创建一个private key
 func GenerateKey() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(S256(), rand.Reader)
 }

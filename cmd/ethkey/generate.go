@@ -44,6 +44,8 @@ Generate a new keyfile.
 
 If you want to encrypt an existing private key, it can be specified by setting
 --privatekey with the location of the file containing the private key.
+如果你想要对一个已经存在的private key进行加密，可以通过--privatekey指定存储private key所在
+文件的位置
 `,
 	Flags: []cli.Flag{
 		passphraseFlag,
@@ -55,6 +57,7 @@ If you want to encrypt an existing private key, it can be specified by setting
 	},
 	Action: func(ctx *cli.Context) error {
 		// Check if keyfile path given and make sure it doesn't already exist.
+		// 检查给定的keyfile并且确保它不存在
 		keyfilepath := ctx.Args().First()
 		if keyfilepath == "" {
 			keyfilepath = defaultKeyfileName
@@ -91,6 +94,7 @@ If you want to encrypt an existing private key, it can be specified by setting
 
 		// Encrypt key with passphrase.
 		passphrase := promptPassphrase(true)
+		// 对key用passphrase进行加密
 		keyjson, err := keystore.EncryptKey(key, passphrase, keystore.StandardScryptN, keystore.StandardScryptP)
 		if err != nil {
 			utils.Fatalf("Error encrypting key: %v", err)

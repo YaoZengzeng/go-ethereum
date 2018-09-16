@@ -73,6 +73,7 @@ var (
 	}
 	keystoreFlag = cli.StringFlag{
 		Name:  "keystore",
+		// 默认为$HOME/.ethereum/keystrore
 		Value: filepath.Join(node.DefaultDataDir(), "keystore"),
 		Usage: "Directory for the keystore",
 	}
@@ -114,6 +115,9 @@ var (
 	}
 	stdiouiFlag = cli.BoolFlag{
 		Name: "stdio-ui",
+		// 使用STDIN/STDOUT作为一个external UI的channel
+		// 这意味着一个STDIN/STDOUT用于一个图形界面用户的RPC交互
+		// 可以在Clef作为一个external process的时候使用
 		Usage: "Use STDIN/STDOUT as a channel for an external UI. " +
 			"This means that an STDIN/STDOUT is used for RPC-communication with a e.g. a graphical user " +
 			"interface, and can be used when Clef is started by an external process.",
@@ -353,6 +357,7 @@ func signer(c *cli.Context) error {
 	)
 
 	configDir := c.String(configdirFlag.Name)
+	// stretchedKey即为master seed
 	if stretchedKey, err := readMasterKey(c); err != nil {
 		log.Info("No master seed provided, rules disabled")
 	} else {
@@ -368,6 +373,7 @@ func signer(c *cli.Context) error {
 		confkey := crypto.Keccak256([]byte("config"), stretchedKey)
 
 		// Initialize the encrypted storages
+		// 初始化encrypted storages
 		pwStorage := storage.NewAESEncryptedStorage(filepath.Join(vaultLocation, "credentials.json"), pwkey)
 		jsStorage := storage.NewAESEncryptedStorage(filepath.Join(vaultLocation, "jsstorage.json"), jskey)
 		configStorage := storage.NewAESEncryptedStorage(filepath.Join(vaultLocation, "config.json"), confkey)
@@ -381,10 +387,12 @@ func signer(c *cli.Context) error {
 			hasher.Write(ruleJS)
 			shasum := hasher.Sum(nil)
 			storedShasum := configStorage.Get("ruleset_sha256")
+			// 对rule set的哈希值进行验证
 			if storedShasum != hex.EncodeToString(shasum) {
 				log.Info("Could not validate ruleset hash, rules not enabled", "got", hex.EncodeToString(shasum), "expected", storedShasum)
 			} else {
 				// Initialize rules
+				// 初始化rule
 				ruleEngine, err := rules.NewRuleEvaluator(ui, jsStorage, pwStorage)
 				if err != nil {
 					utils.Fatalf(err.Error())

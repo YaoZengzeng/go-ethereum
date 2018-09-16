@@ -29,12 +29,14 @@ Change the passphrase of a keyfile.`,
 		keyfilepath := ctx.Args().First()
 
 		// Read key from file.
+		// 从keyfilepath中读取key
 		keyjson, err := ioutil.ReadFile(keyfilepath)
 		if err != nil {
 			utils.Fatalf("Failed to read the keyfile at '%s': %v", keyfilepath, err)
 		}
 
 		// Decrypt key with passphrase.
+		// 对passpharse对key进行解密
 		passphrase := getPassphrase(ctx)
 		key, err := keystore.DecryptKey(keyjson, passphrase)
 		if err != nil {

@@ -18,6 +18,8 @@
 
 This key store behaves as KeyStorePlain with the difference that
 the private key is encrypted and on disk uses another JSON encoding.
+这个key store的行为和KeyStorePlain不同，private key会被加密并且以另一个JSON encoding
+的方式放在磁盘中
 
 The crypto is documented at https://github.com/ethereum/wiki/wiki/Web3-Secret-Storage-Definition
 
@@ -85,6 +87,7 @@ func (ks keyStorePassphrase) GetKey(addr common.Address, filename, auth string) 
 		return nil, err
 	}
 	// Make sure we're really operating on the requested key (no swap attacks)
+	// 确保我们的确是在requested key上进行操作
 	if key.Address != addr {
 		return nil, fmt.Errorf("key content mismatch: have account %x, want %x", key.Address, addr)
 	}
@@ -92,11 +95,13 @@ func (ks keyStorePassphrase) GetKey(addr common.Address, filename, auth string) 
 }
 
 // StoreKey generates a key, encrypts with 'auth' and stores in the given directory
+// StoreKey创建一个key，并且用'auth'进行加密，并存在指定的目录
 func StoreKey(dir, auth string, scryptN, scryptP int) (common.Address, error) {
 	_, a, err := storeNewKey(&keyStorePassphrase{dir, scryptN, scryptP}, rand.Reader, auth)
 	return a.Address, err
 }
 
+// 将key进行加密，并写入文件中
 func (ks keyStorePassphrase) StoreKey(filename string, key *Key, auth string) error {
 	keyjson, err := EncryptKey(key, auth, ks.scryptN, ks.scryptP)
 	if err != nil {
@@ -114,6 +119,7 @@ func (ks keyStorePassphrase) JoinPath(filename string) string {
 
 // EncryptKey encrypts a key using the specified scrypt parameters into a json
 // blob that can be decrypted later on.
+// EncryptKey用特定的scrypt parameters对给定的key进行加密为一个json，之后可以被解密
 func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {
 	authArray := []byte(auth)
 
@@ -167,6 +173,7 @@ func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {
 }
 
 // DecryptKey decrypts a key from a json blob, returning the private key itself.
+// DecryptKey从一个json blob中解密key，返回它自己的private key
 func DecryptKey(keyjson []byte, auth string) (*Key, error) {
 	// Parse the json into a simple map to fetch the key version
 	m := make(map[string]interface{})

@@ -83,6 +83,7 @@ Make sure you remember the password you gave when creating a new account (with
 either new or import). Without it you are not able to unlock your account.
 
 Note that exporting your key in unencrypted format is NOT supported.
+以非加密的方式暴露key是不被允许的
 
 Keys are stored under <DATADIR>/keystore.
 It is safe to transfer the entire directory or the individual keys therein
@@ -115,8 +116,10 @@ Print a short summary of all accounts`,
     geth account new
 
 Creates a new account and prints the address.
+创建一个新的account并且输出地址
 
 The account is saved in encrypted format, you are prompted for a passphrase.
+account以加密的形式存储，你会被提示要求输入密码
 
 You must remember this passphrase to unlock your account in the future.
 
@@ -235,6 +238,8 @@ func unlockAccount(ctx *cli.Context, ks *keystore.KeyStore, address string, i in
 
 // getPassPhrase retrieves the password associated with an account, either fetched
 // from a list of preloaded passphrases, or requested interactively from the user.
+// getPassPhrase获取一个和account相关的passphrases，要么从一系列已经提前加载的passphrases获取
+// 要么和用户交互获取
 func getPassPhrase(prompt string, confirmation bool, i int, passwords []string) string {
 	// If a list of passwords was supplied, retrieve from them
 	if len(passwords) > 0 {
@@ -290,6 +295,7 @@ func ambiguousAddrRecovery(ks *keystore.KeyStore, err *keystore.AmbiguousAddrErr
 }
 
 // accountCreate creates a new account into the keystore defined by the CLI flags.
+// accountCreate创建一个新的account并存入keystore
 func accountCreate(ctx *cli.Context) error {
 	cfg := gethConfig{Node: defaultNodeConfig()}
 	// Load config file.
@@ -307,6 +313,7 @@ func accountCreate(ctx *cli.Context) error {
 
 	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
 
+	// 创建address
 	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
 
 	if err != nil {

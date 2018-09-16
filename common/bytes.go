@@ -33,6 +33,8 @@ func ToHex(b []byte) string {
 
 // FromHex returns the bytes represented by the hexadecimal string s.
 // s may be prefixed with "0x".
+// FromHex返回hexadecimal string s的bytes表示
+// s的前缀可能是0x
 func FromHex(s string) []byte {
 	if len(s) > 1 {
 		if s[0:2] == "0x" || s[0:2] == "0X" {

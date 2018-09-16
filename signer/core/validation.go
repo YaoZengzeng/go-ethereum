@@ -29,6 +29,9 @@ import (
 // - ABI-data validation
 // - Transaction semantics validation
 // The package provides warnings for typical pitfalls
+// validation包包含了对于transactions的合法性检查，包括：
+// - ABI数据的检查
+// - transaction语义的验证
 
 func (vs *ValidationMessages) crit(msg string) {
 	vs.Messages = append(vs.Messages, ValidationInfo{"CRITICAL", msg})

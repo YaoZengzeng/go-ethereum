@@ -184,6 +184,8 @@ func NewAbiDBFromFile(path string) (*AbiDb, error) {
 
 // NewAbiDBFromFiles loads both the standard signature database and a custom database. The latter will be used
 // to write new values into if they are submitted via the API
+// NewAbiDBFromFiles加载标准的signature database以及custom database
+// 后者会写入新值，如果它们通过API提交的话
 func NewAbiDBFromFiles(standard, custom string) (*AbiDb, error) {
 
 	db := &AbiDb{make(map[string]string), make(map[string]string), custom}
@@ -195,6 +197,7 @@ func NewAbiDBFromFiles(standard, custom string) (*AbiDb, error) {
 	}
 	json.Unmarshal(raw, &db.db)
 	// Custom file may not exist. Will be created during save, if needed
+	// custom file可能不存在，但是如果需要的话，会在保存的时候创建
 	if _, err := os.Stat(custom); err == nil {
 		raw, err = ioutil.ReadFile(custom)
 		if err != nil {

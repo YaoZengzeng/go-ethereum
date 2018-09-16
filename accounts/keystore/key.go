@@ -42,18 +42,23 @@ const (
 type Key struct {
 	Id uuid.UUID // Version 4 "random" for unique id not derived from key data
 	// to simplify lookups we also store the address
+	// 为了简化查找，我们也把address存了起来
 	Address common.Address
 	// we only store privkey as pubkey/address can be derived from it
 	// privkey in this struct is always in plaintext
+	// 我们只存储privkey，因为pubkey/address都可以从它推测出来
+	// privkey在这个结构总是明文存储的
 	PrivateKey *ecdsa.PrivateKey
 }
 
 type keyStore interface {
 	// Loads and decrypts the key from disk.
+	// 从磁盘中加载并且解密key
 	GetKey(addr common.Address, filename string, auth string) (*Key, error)
 	// Writes and encrypts the key.
 	StoreKey(filename string, k *Key, auth string) error
 	// Joins filename with the key directory unless it is already absolute.
+	// Joins将filename和key directory连接，除非它已经是绝对路径了
 	JoinPath(filename string) string
 }
 
@@ -167,10 +172,12 @@ func newKey(rand io.Reader) (*Key, error) {
 }
 
 func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Account, error) {
+	// 创建一个新的key
 	key, err := newKey(rand)
 	if err != nil {
 		return nil, accounts.Account{}, err
 	}
+	// 创建一个account
 	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme, Path: ks.JoinPath(keyFileName(key.Address))}}
 	if err := ks.StoreKey(a.URL.Path, key, auth); err != nil {
 		zeroKey(key.PrivateKey)
@@ -188,6 +195,7 @@ func writeKeyFile(file string, content []byte) error {
 	}
 	// Atomic write: create a temporary hidden file first
 	// then move it into place. TempFile assigns mode 0600.
+	// 原子写入：创建一个临时的隐藏文件，然后将它重命名，TempFile的mode为0600
 	f, err := ioutil.TempFile(filepath.Dir(file), "."+filepath.Base(file)+".tmp")
 	if err != nil {
 		return err
