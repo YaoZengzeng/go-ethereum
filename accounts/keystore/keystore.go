@@ -56,10 +56,14 @@ const KeyStoreScheme = "keystore"
 const walletRefreshCycle = 3 * time.Second
 
 // KeyStore manages a key storage directory on disk.
+// KeyStore管理在磁盘上的一个key storage目录
 type KeyStore struct {
+	// 存储后端，可能为明文的或者加密的
 	storage  keyStore                     // Storage backend, might be cleartext or encrypted
+	// 内存中的account cache
 	cache    *accountCache                // In-memory account cache over the filesystem storage
 	changes  chan struct{}                // Channel receiving change notifications from the cache
+	// 当前已经unlock的account
 	unlocked map[common.Address]*unlocked // Currently unlocked account (decrypted private keys)
 
 	wallets     []accounts.Wallet       // Wallet wrappers around the individual key files
@@ -76,6 +80,7 @@ type unlocked struct {
 }
 
 // NewKeyStore creates a keystore for the given directory.
+// NewKeyStore在给定目录创建一个keystore
 func NewKeyStore(keydir string, scryptN, scryptP int) *KeyStore {
 	keydir, _ = filepath.Abs(keydir)
 	ks := &KeyStore{storage: &keyStorePassphrase{keydir, scryptN, scryptP}}
@@ -98,6 +103,7 @@ func (ks *KeyStore) init(keydir string) {
 	defer ks.mu.Unlock()
 
 	// Initialize the set of unlocked keys and the account cache
+	// 初始化一系列的unlocked keys以及account cache
 	ks.unlocked = make(map[common.Address]*unlocked)
 	ks.cache, ks.changes = newAccountCache(keydir)
 
@@ -298,6 +304,8 @@ func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string
 
 // SignTxWithPassphrase signs the transaction if the private key matching the
 // given address can be decrypted with the given passphrase.
+// SignTxWithPassphrase对transaction进行sign，如果匹配给定address的private key能通过
+// 给定的passphrase进行解密
 func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
 	if err != nil {

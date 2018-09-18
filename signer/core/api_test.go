@@ -145,6 +145,7 @@ func createAccount(control chan string, api *SignerAPI, t *testing.T) {
 
 	control <- "Y"
 	control <- "apassword"
+	// 创建一个新的account
 	_, err := api.New(context.Background())
 	if err != nil {
 		t.Fatal(err)
@@ -155,6 +156,7 @@ func createAccount(control chan string, api *SignerAPI, t *testing.T) {
 func failCreateAccount(control chan string, api *SignerAPI, t *testing.T) {
 	control <- "N"
 	acc, err := api.New(context.Background())
+	// 返回的错误必须为ErrRequestDenied
 	if err != ErrRequestDenied {
 		t.Fatal(err)
 	}

@@ -26,6 +26,7 @@ import (
 
 // keystoreWallet implements the accounts.Wallet interface for the original
 // keystore.
+// keystoreWallet为原始的keystore实现了accounts.Wallet接口
 type keystoreWallet struct {
 	account  accounts.Account // Single account contained in this wallet
 	keystore *KeyStore        // Keystore where the account originates from
@@ -126,6 +127,8 @@ func (w *keystoreWallet) SignHashWithPassphrase(account accounts.Account, passph
 
 // SignTxWithPassphrase implements accounts.Wallet, attempting to sign the given
 // transaction with the given account using passphrase as extra authentication.
+// SignTxWithPassphrase实现了accounts.Wallet，试着用给定的account以及密码作为额外的验证
+// 方式对transaction进行sign
 func (w *keystoreWallet) SignTxWithPassphrase(account accounts.Account, passphrase string, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	// Make sure the requested account is contained within
 	if account.Address != w.account.Address {

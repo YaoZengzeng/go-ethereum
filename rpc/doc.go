@@ -20,6 +20,9 @@ or other I/O connection. After creating a server instance objects can be registe
 making it visible from the outside. Exported methods that follow specific
 conventions can be called remotely. It also has support for the publish/subscribe
 pattern.
+rpc包提供了对于一个对象的exported methods的访问，可以通过网络或者其他I/O connection
+在创建一个server实例之后它可以被注册，让它在外部可见。暴露的方法遵循指定的规则可以通过外部进行访问
+它同时也支持发布者/订阅者模式
 
 Methods that satisfy the following criteria are made available for remote access:
  - object must be exported

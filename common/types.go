@@ -285,6 +285,7 @@ func (a UnprefixedAddress) MarshalText() ([]byte, error) {
 
 // MixedcaseAddress retains the original string, which may or may not be
 // correctly checksummed
+// MixedcaseAddress保留了原始的string，可能会被正确的checksummed
 type MixedcaseAddress struct {
 	addr     Address
 	original string

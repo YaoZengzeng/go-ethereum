@@ -41,6 +41,7 @@ func NewStdIOUI() *StdIOUI {
 }
 
 // dispatch sends a request over the stdio
+// dispatch通过stdio发送request
 func (ui *StdIOUI) dispatch(serviceMethod string, args interface{}, reply interface{}) error {
 	err := ui.client.Call(&reply, serviceMethod, args)
 	if err != nil {

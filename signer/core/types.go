@@ -61,6 +61,7 @@ type ValidationMessages struct {
 }
 
 // SendTxArgs represents the arguments to submit a transaction
+// SendTxArgs代表了提交一个transaction所需的参数
 type SendTxArgs struct {
 	From     common.MixedcaseAddress  `json:"from"`
 	To       *common.MixedcaseAddress `json:"to"`
@@ -81,6 +82,7 @@ func (args SendTxArgs) String() string {
 	return err.Error()
 }
 
+// 将一个SendTxArgs变量转换为一个真正的Transaction
 func (args *SendTxArgs) toTransaction() *types.Transaction {
 	var input []byte
 	if args.Data != nil {

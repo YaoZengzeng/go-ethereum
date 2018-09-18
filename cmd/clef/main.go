@@ -105,6 +105,7 @@ var (
 	}
 	auditLogFlag = cli.StringFlag{
 		Name:  "auditlog",
+		// 用来存放audit logs的文件
 		Usage: "File used to emit audit logs. Set to \"\" to disable",
 		Value: "audit.log",
 	}
@@ -341,9 +342,11 @@ func signer(c *cli.Context) error {
 	)
 	if c.Bool(stdiouiFlag.Name) {
 		log.Info("Using stdin/stdout as UI-channel")
+		// 将stdin/stdout作为UI-channel
 		ui = core.NewStdIOUI()
 	} else {
 		log.Info("Using CLI as UI-channel")
+		// 将CLI作为UI-channel
 		ui = core.NewCommandlineUI()
 	}
 	db, err := core.NewAbiDBFromFiles(c.String(dBFlag.Name), c.String(customDBFlag.Name))

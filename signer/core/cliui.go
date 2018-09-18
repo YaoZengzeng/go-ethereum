@@ -57,6 +57,7 @@ func (ui *CommandlineUI) readString() string {
 
 // readPassword reads a single line from stdin, trimming it from the trailing new
 // line and returns it. The input will not be echoed.
+// readPassword从stdin读入一行，将末尾的换行修剪掉并且返回，输入并不会被echoed
 func (ui *CommandlineUI) readPassword() string {
 	fmt.Printf("Enter password to approve:\n")
 	fmt.Printf("> ")
@@ -98,6 +99,7 @@ func showMetadata(metadata Metadata) {
 }
 
 // ApproveTx prompt the user for confirmation to request to sign Transaction
+// ApproveTx提示用户确认sign transaction的请求
 func (ui *CommandlineUI) ApproveTx(request *SignTxRequest) (SignTxResponse, error) {
 	ui.mu.Lock()
 	defer ui.mu.Unlock()
@@ -207,6 +209,7 @@ func (ui *CommandlineUI) ApproveListing(request *ListRequest) (ListResponse, err
 }
 
 // ApproveNewAccount prompt the user for confirmation to create new Account, and reveal to caller
+// ApproveNewAccount提示用户确认创建一个新的Account，并且告诉调用者
 func (ui *CommandlineUI) ApproveNewAccount(request *NewAccountRequest) (NewAccountResponse, error) {
 
 	ui.mu.Lock()

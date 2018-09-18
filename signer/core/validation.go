@@ -160,6 +160,7 @@ func (v *Validator) validate(msgs *ValidationMessages, txargs *SendTxArgs, metho
 
 // ValidateTransaction does a number of checks on the supplied transaction, and returns either a list of warnings,
 // or an error, indicating that the transaction should be immediately rejected
+// ValidateTransaction对提供的transaction进行一系列的检查，并且返回一系列的warnings，或者error，表明transaction会被立即返回
 func (v *Validator) ValidateTransaction(txArgs *SendTxArgs, methodSelector *string) (*ValidationMessages, error) {
 	msgs := &ValidationMessages{}
 	return msgs, v.validate(msgs, txArgs, methodSelector)

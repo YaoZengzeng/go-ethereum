@@ -126,6 +126,7 @@ func (m Metadata) String() string {
 }
 
 // types for the requests/response types between signer and UI
+// signer和UI之间的requests/response类型
 type (
 	// SignTxRequest contains info about a Transaction to sign
 	SignTxRequest struct {
@@ -235,6 +236,7 @@ func NewSignerAPI(chainID int64, ksLocation string, noUSB bool, ui SignerUI, abi
 
 // List returns the set of wallet this signer manages. Each wallet can contain
 // multiple accounts.
+// List返回当前signer管理的wallet数目，每个wallets可以包含多个accounts
 func (api *SignerAPI) List(ctx context.Context) (Accounts, error) {
 	var accs []Account
 	for _, wallet := range api.am.Wallets() {
@@ -257,11 +259,14 @@ func (api *SignerAPI) List(ctx context.Context) (Accounts, error) {
 // New creates a new password protected Account. The private key is protected with
 // the given password. Users are responsible to backup the private key that is stored
 // in the keystore location thas was specified when this API was created.
+// New创建一个新的用password保护的Account，private key用给定的password保护
+// 用户负责将private key保存在API被创建时指定的keystore location中
 func (api *SignerAPI) New(ctx context.Context) (accounts.Account, error) {
 	be := api.am.Backends(keystore.KeyStoreType)
 	if len(be) == 0 {
 		return accounts.Account{}, errors.New("password based accounts not supported")
 	}
+	// 调用ApproveNewAccount批准Account Request
 	resp, err := api.UI.ApproveNewAccount(&NewAccountRequest{MetadataFromContext(ctx)})
 
 	if err != nil {
@@ -320,6 +325,7 @@ func logDiff(original *SignTxRequest, new *SignTxResponse) bool {
 }
 
 // SignTransaction signs the given Transaction and returns it both as json and rlp-encoded form
+// SignTransaction对给定的transaction进行sign，同时以json和rlp-encoded的形式返回
 func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, methodSelector *string) (*ethapi.SignTransactionResult, error) {
 	var (
 		err    error
@@ -358,6 +364,7 @@ func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, meth
 	var unsignedTx = result.Transaction.toTransaction()
 
 	// The one to sign is the one that was returned from the UI
+	// 进行sign的wallet是从UI返回的wallet
 	signedTx, err := wallet.SignTxWithPassphrase(acc, result.Password, unsignedTx, api.chainID)
 	if err != nil {
 		api.UI.ShowError(err.Error())
@@ -368,6 +375,7 @@ func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, meth
 	response := ethapi.SignTransactionResult{Raw: rlpdata, Tx: signedTx}
 
 	// Finally, send the signed tx to the UI
+	// 最后将signed tx发送给UI
 	api.UI.OnApprovedTx(response)
 	// ...and to the external caller
 	return &response, nil

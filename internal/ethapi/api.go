@@ -1267,6 +1267,7 @@ func (s *PublicTransactionPoolAPI) Sign(addr common.Address, data hexutil.Bytes)
 }
 
 // SignTransactionResult represents a RLP encoded signed transaction.
+// SignTransactionResult代表一个RLP编码的signed transaction
 type SignTransactionResult struct {
 	Raw hexutil.Bytes      `json:"raw"`
 	Tx  *types.Transaction `json:"tx"`

@@ -1342,6 +1342,7 @@ func MakeConsolePreloads(ctx *cli.Context) []string {
 // MigrateFlags sets the global flag from a local flag when it's set.
 // This is a temporary function used for migrating old command/flags to the
 // new format.
+// MigrateFlags会将一个local flag设置为global flag
 //
 // e.g. geth account new --keystore /tmp/mykeystore --lightkdf
 //

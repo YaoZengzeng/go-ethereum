@@ -106,6 +106,7 @@ func (msg *jsonrpcMessage) String() string {
 }
 
 // Client represents a connection to an RPC server.
+// Client代表了到一个RPC server的连接
 type Client struct {
 	idCounter   uint32
 	connectFunc func(ctx context.Context) (net.Conn, error)
@@ -131,6 +132,7 @@ type Client struct {
 type requestOp struct {
 	ids  []json.RawMessage
 	err  error
+	// 从resp中获取len(ids)个responses
 	resp chan *jsonrpcMessage // receives up to len(ids) responses
 	sub  *ClientSubscription  // only set for EthSubscribe requests
 }
@@ -139,6 +141,7 @@ func (op *requestOp) wait(ctx context.Context) (*jsonrpcMessage, error) {
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
+	// 获取resp
 	case resp := <-op.resp:
 		return resp, op.err
 	}
@@ -159,9 +162,12 @@ func Dial(rawurl string) (*Client, error) {
 }
 
 // DialContext creates a new RPC client, just like Dial.
+// DialContext创建一个新的RPC client，就和Dial一样
 //
 // The context is used to cancel or time out the initial connection establishment. It does
 // not affect subsequent interactions with the client.
+// context用来对初始的connection establishment进行cancel或者timeout操作
+// 它不会影响后面和client的交互
 func DialContext(ctx context.Context, rawurl string) (*Client, error) {
 	u, err := url.Parse(rawurl)
 	if err != nil {
@@ -184,10 +190,12 @@ func DialContext(ctx context.Context, rawurl string) (*Client, error) {
 type StdIOConn struct{}
 
 func (io StdIOConn) Read(b []byte) (n int, err error) {
+	// os.Stdin.Read就直接从Stdin输入
 	return os.Stdin.Read(b)
 }
 
 func (io StdIOConn) Write(b []byte) (n int, err error) {
+	// Write就是写入stdout
 	return os.Stdout.Write(b)
 }
 
@@ -221,6 +229,7 @@ func DialStdIO(ctx context.Context) (*Client, error) {
 }
 
 func newClient(initctx context.Context, connectFunc func(context.Context) (net.Conn, error)) (*Client, error) {
+	// 调用给定的connectFunc创建一个net.Conn接口
 	conn, err := connectFunc(initctx)
 	if err != nil {
 		return nil, err
@@ -241,6 +250,7 @@ func newClient(initctx context.Context, connectFunc func(context.Context) (net.C
 		subs:        make(map[string]*ClientSubscription),
 	}
 	if !isHTTP {
+		// 如果不是http连接，就创建一个goroutine进行dispatch
 		go c.dispatch(conn)
 	}
 	return c, nil
@@ -275,9 +285,12 @@ func (c *Client) Close() {
 
 // Call performs a JSON-RPC call with the given arguments and unmarshals into
 // result if no error occurred.
+// Call用给定的参数执行一个JSON-RPC调用，并且如果没有遇到错误的话，将结果unmarshals到result
 //
 // The result must be a pointer so that package json can unmarshal into it. You
 // can also pass nil, in which case the result is ignored.
+// result必须是一个指针，这样package json可以unmarshal到里面，也可以传递一个nil，这样result
+// 就会被忽略
 func (c *Client) Call(result interface{}, method string, args ...interface{}) error {
 	ctx := context.Background()
 	return c.CallContext(ctx, result, method, args...)
@@ -285,10 +298,12 @@ func (c *Client) Call(result interface{}, method string, args ...interface{}) er
 
 // CallContext performs a JSON-RPC call with the given arguments. If the context is
 // canceled before the call has successfully returned, CallContext returns immediately.
+// CallContext用给定的参数执行一个JSON-RPC调用，如果context在调用成功返回之前被取消了，CallContext立即返回
 //
 // The result must be a pointer so that package json can unmarshal into it. You
 // can also pass nil, in which case the result is ignored.
 func (c *Client) CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error {
+	// 构建一个新的message
 	msg, err := c.newMessage(method, args...)
 	if err != nil {
 		return err
@@ -305,6 +320,7 @@ func (c *Client) CallContext(ctx context.Context, result interface{}, method str
 	}
 
 	// dispatch has accepted the request and will close the channel when it quits.
+	// dispatch已经接收了request，当它退出的时候会关闭channel
 	switch resp, err := op.wait(ctx); {
 	case err != nil:
 		return err
@@ -456,12 +472,15 @@ func (c *Client) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMes
 
 // send registers op with the dispatch loop, then sends msg on the connection.
 // if sending fails, op is deregistered.
+// send将op注册到dispatch loop，之后将msg发送到connection
+// 如果发送失败，则op会被注销
 func (c *Client) send(ctx context.Context, op *requestOp, msg interface{}) error {
 	select {
 	case c.requestOp <- op:
 		log.Trace("", "msg", log.Lazy{Fn: func() string {
 			return fmt.Sprint("sending ", msg)
 		}})
+		// 将message写入writer
 		err := c.write(ctx, msg)
 		c.sendDone <- err
 		return err
@@ -510,8 +529,11 @@ func (c *Client) reconnect(ctx context.Context) error {
 }
 
 // dispatch is the main loop of the client.
+// dispatch是client的main loop
 // It sends read messages to waiting calls to Call and BatchCall
 // and subscription notifications to registered subscriptions.
+// 它返回read message到等待Call和BatchCall的调用以及对于registered subscriptions
+// 的subscription notification
 func (c *Client) dispatch(conn net.Conn) {
 	// Spawn the initial read loop.
 	go c.read(conn)
@@ -544,6 +566,7 @@ func (c *Client) dispatch(conn net.Conn) {
 
 		// Read path.
 		case batch := <-c.readResp:
+			// 读取信息进行处理
 			for _, msg := range batch {
 				switch {
 				case msg.isNotification():
@@ -652,6 +675,7 @@ func (c *Client) handleResponse(msg *jsonrpcMessage) {
 	}
 	delete(c.respWait, string(msg.ID))
 	// For normal responses, just forward the reply to Call/BatchCall.
+	// 对于普通的responses，简单地将reply转发到Call和BatchCall
 	if op.sub == nil {
 		op.resp <- msg
 		return
@@ -671,12 +695,14 @@ func (c *Client) handleResponse(msg *jsonrpcMessage) {
 }
 
 // Reading happens on a dedicated goroutine.
+// 读取发送在一个专用的goroutine中
 
 func (c *Client) read(conn net.Conn) error {
 	var (
 		buf json.RawMessage
 		dec = json.NewDecoder(conn)
 	)
+	// 从stdin中读取message
 	readMessage := func() (rs []*jsonrpcMessage, err error) {
 		buf = buf[:0]
 		if err = dec.Decode(&buf); err != nil {
@@ -692,11 +718,13 @@ func (c *Client) read(conn net.Conn) error {
 	}
 
 	for {
+		// 从连接中读取json message
 		resp, err := readMessage()
 		if err != nil {
 			c.readErr <- err
 			return err
 		}
+		// 从stdin读入，输出到readResp
 		c.readResp <- resp
 	}
 }
