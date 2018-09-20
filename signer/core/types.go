@@ -70,6 +70,7 @@ type SendTxArgs struct {
 	Value    hexutil.Big              `json:"value"`
 	Nonce    hexutil.Uint64           `json:"nonce"`
 	// We accept "data" and "input" for backwards-compatibility reasons.
+	// 为了向后兼容，我们同时接受"data"和"input"
 	Data  *hexutil.Bytes `json:"data"`
 	Input *hexutil.Bytes `json:"input"`
 }

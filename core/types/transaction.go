@@ -238,6 +238,7 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 	if err != nil {
 		return nil, err
 	}
+	// 对transaction进行拷贝
 	cpy := &Transaction{data: tx.data}
 	// 对其中的R, S, V进行赋值
 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v

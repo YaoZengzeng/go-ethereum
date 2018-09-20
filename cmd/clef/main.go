@@ -409,6 +409,7 @@ func signer(c *cli.Context) error {
 
 	apiImpl := core.NewSignerAPI(
 		c.Int64(utils.NetworkIdFlag.Name),
+		// keystoreFlag包含了keystore文件的路径
 		c.String(keystoreFlag.Name),
 		c.Bool(utils.NoUSBFlag.Name),
 		ui, db,

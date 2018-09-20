@@ -32,6 +32,7 @@ type Manager struct {
 	backends map[reflect.Type][]Backend // Index of backends currently registered
 	updaters []event.Subscription       // Wallet update subscriptions for all backends
 	updates  chan WalletEvent           // Subscription sink for backend wallet changes
+	// 来自所有注册的backends的wallets的缓存
 	wallets  []Wallet                   // Cache of all wallets from all registered backends
 
 	feed event.Feed // Wallet feed notifying of arrivals/departures
@@ -45,6 +46,7 @@ type Manager struct {
 // NewManager创建一个通用的account manager，通过各种支持的backends对transaction进行sign
 func NewManager(backends ...Backend) *Manager {
 	// Retrieve the initial list of wallets from the backends and sort by URL
+	// 从backend中获取初始的wallets并通过URL进行排序
 	var wallets []Wallet
 	for _, backend := range backends {
 		wallets = merge(wallets, backend.Wallets()...)
@@ -58,6 +60,7 @@ func NewManager(backends ...Backend) *Manager {
 		subs[i] = backend.Subscribe(updates)
 	}
 	// Assemble the account manager and return
+	// 组装account manager并返回
 	am := &Manager{
 		backends: make(map[reflect.Type][]Backend),
 		updaters: subs,

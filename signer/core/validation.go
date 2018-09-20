@@ -106,6 +106,7 @@ func (v *Validator) validateCallData(msgs *ValidationMessages, data []byte, meth
 }
 
 // validateSemantics checks if the transactions 'makes sense', and generate warnings for a couple of typical scenarios
+// validateSemantics检测transaction是否正确，并且真对一系列特定的场景产生warnings
 func (v *Validator) validate(msgs *ValidationMessages, txargs *SendTxArgs, methodSelector *string) error {
 	// Prevent accidental erroneous usage of both 'input' and 'data'
 	if txargs.Data != nil && txargs.Input != nil && !bytes.Equal(*txargs.Data, *txargs.Input) {
@@ -126,6 +127,7 @@ func (v *Validator) validate(msgs *ValidationMessages, txargs *SendTxArgs, metho
 
 	if txargs.To == nil {
 		//Contract creation should contain sufficient data to deploy a contract
+		// Contract创建需要包含足够的data用于部署contract
 		// A typical error is omitting sender due to some quirk in the javascript call
 		// e.g. https://github.com/ethereum/go-ethereum/issues/16106
 		if len(data) == 0 {

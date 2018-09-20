@@ -31,6 +31,7 @@ import (
 // Account代表了一个以太坊账户，存在于URL指定的特定的位置
 type Account struct {
 	Address common.Address `json:"address"` // Ethereum account address derived from the key
+	// 可选的位于backend中的resource locator
 	URL     URL            `json:"url"`     // Optional resource locator within a backend
 }
 
@@ -41,6 +42,7 @@ type Wallet interface {
 	// URL retrieves the canonical path under which this wallet is reachable. It is
 	// user by upper layers to define a sorting order over all wallets from multiple
 	// backends.
+	// 获取该wallet的路径，它能够被上层使用来对来自不同的backends的所有wallets进行排序
 	URL() URL
 
 	// Status returns a textual status to aid the user in the current state of the
@@ -51,6 +53,8 @@ type Wallet interface {
 	// Open initializes access to a wallet instance. It is not meant to unlock or
 	// decrypt account keys, rather simply to establish a connection to hardware
 	// wallets and/or to access derivation seeds.
+	// Open初始化对一个钱包实例的访问，它不意味着unlock或者decrypt account keys，而是建立一个
+	// 到hardware wallets的连接，或者对于derivation seeds的访问
 	//
 	// The passphrase parameter may or may not be used by the implementation of a
 	// particular wallet instance. The reason there is no passwordless open method
@@ -146,6 +150,8 @@ type Backend interface {
 	// URL assigned by the backend. Since wallets (especially hardware) may come and
 	// go, the same wallet might appear at a different positions in the list during
 	// subsequent retrievals.
+	// 返回的wallet都按返回的URL的字母序进行排列，因为wallets可能会变动，因此同一个wallet可能会在
+	// 每次的获取中处于不同的位置
 	Wallets() []Wallet
 
 	// Subscribe creates an async subscription to receive notifications when the
@@ -161,6 +167,7 @@ type WalletEventType int
 const (
 	// WalletArrived is fired when a new wallet is detected either via USB or via
 	// a filesystem event in the keystore.
+	// WalletArrived是一个新的wallet通过USB或者filesystem event被检测到时产生的事件
 	WalletArrived WalletEventType = iota
 
 	// WalletOpened is fired when a wallet is successfully opened with the purpose
@@ -173,6 +180,7 @@ const (
 
 // WalletEvent is an event fired by an account backend when a wallet arrival or
 // departure is detected.
+// WalletEvent是一个当account backend检测到wallet arrival或者departure时产生的事件
 type WalletEvent struct {
 	Wallet Wallet          // Wallet instance arrived or departed
 	Kind   WalletEventType // Event type that happened in the system

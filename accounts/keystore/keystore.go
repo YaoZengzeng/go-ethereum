@@ -62,10 +62,12 @@ type KeyStore struct {
 	storage  keyStore                     // Storage backend, might be cleartext or encrypted
 	// 内存中的account cache
 	cache    *accountCache                // In-memory account cache over the filesystem storage
+	// changes可以获取到cache更新的信息
 	changes  chan struct{}                // Channel receiving change notifications from the cache
 	// 当前已经unlock的account
 	unlocked map[common.Address]*unlocked // Currently unlocked account (decrypted private keys)
 
+	// wallet对单个的key files进行了封装
 	wallets     []accounts.Wallet       // Wallet wrappers around the individual key files
 	updateFeed  event.Feed              // Event feed to notify wallet additions/removals
 	updateScope event.SubscriptionScope // Subscription scope tracking current live listeners
@@ -74,6 +76,7 @@ type KeyStore struct {
 	mu sync.RWMutex
 }
 
+// unlocked中存放的就是key
 type unlocked struct {
 	*Key
 	abort chan struct{}
@@ -110,13 +113,17 @@ func (ks *KeyStore) init(keydir string) {
 	// TODO: In order for this finalizer to work, there must be no references
 	// to ks. addressCache doesn't keep a reference but unlocked keys do,
 	// so the finalizer will not trigger until all timed unlocks have expired.
+	// 为了让这个finalizer能work，必须让ks没有引用，addressCache不会保存reference但是
+	// unlocked keys会，因此finalizer不会触发，直到所有的timed unlocks已经超时
 	runtime.SetFinalizer(ks, func(m *KeyStore) {
 		m.cache.close()
 	})
 	// Create the initial list of wallets from the cache
+	// 从cache中创建初始的list of wallets
 	accs := ks.cache.accounts()
 	ks.wallets = make([]accounts.Wallet, len(accs))
 	for i := 0; i < len(accs); i++ {
+		// 每个account一个wallet
 		ks.wallets[i] = &keystoreWallet{account: accs[i], keystore: ks}
 	}
 }
@@ -137,6 +144,7 @@ func (ks *KeyStore) Wallets() []accounts.Wallet {
 
 // refreshWallets retrieves the current account list and based on that does any
 // necessary wallet refreshes.
+// refreshWallets获取当前的account list并且基于此做一些wallet refreshes的操作
 func (ks *KeyStore) refreshWallets() {
 	// Retrieve the current list of accounts
 	ks.mu.Lock()
@@ -260,6 +268,8 @@ func (ks *KeyStore) Delete(a accounts.Account, passphrase string) error {
 
 // SignHash calculates a ECDSA signature for the given hash. The produced
 // signature is in the [R || S || V] format where V is 0 or 1.
+// SignHash计算一个给定的哈希的ECDSA signature，产生出的signature的形式为[R || S || V]
+// 其中V为0或1
 func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 	// Look up the key to sign with and abort if it cannot be found
 	ks.mu.RLock()
@@ -270,6 +280,7 @@ func (ks *KeyStore) SignHash(a accounts.Account, hash []byte) ([]byte, error) {
 		return nil, ErrLocked
 	}
 	// Sign the hash using plain ECDSA operations
+	// 用plain ECDSA operations对哈希进行签名
 	return crypto.Sign(hash, unlockedKey.PrivateKey)
 }
 
@@ -284,6 +295,7 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *types.Transaction, chainID *b
 		return nil, ErrLocked
 	}
 	// Depending on the presence of the chain ID, sign with EIP155 or homestead
+	// 根据chain ID决定是用EIP155还是homestead进行签名
 	if chainID != nil {
 		return types.SignTx(tx, types.NewEIP155Signer(chainID), unlockedKey.PrivateKey)
 	}
@@ -413,6 +425,7 @@ func (ks *KeyStore) expire(addr common.Address, u *unlocked, timeout time.Durati
 
 // NewAccount generates a new key and stores it into the key directory,
 // encrypting it with the passphrase.
+// NewAccount生成一个新的key并且将它存放到key directory中，用passphrase进行加密
 func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
 	_, account, err := storeNewKey(ks.storage, crand.Reader, passphrase)
 	if err != nil {
@@ -420,6 +433,7 @@ func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
 	}
 	// Add the account to the cache immediately rather
 	// than waiting for file system notifications to pick it up.
+	// 立即将account加入到cache中，而不是等待文件系统的通知
 	ks.cache.add(account)
 	ks.refreshWallets()
 	return account, nil

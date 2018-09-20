@@ -28,7 +28,9 @@ import (
 // keystore.
 // keystoreWallet为原始的keystore实现了accounts.Wallet接口
 type keystoreWallet struct {
+	// 这个wallet中存放的唯一的account
 	account  accounts.Account // Single account contained in this wallet
+	// 这个account来自于的那个keystore
 	keystore *KeyStore        // Keystore where the account originates from
 }
 
@@ -83,6 +85,7 @@ func (w *keystoreWallet) SelfDerive(base accounts.DerivationPath, chain ethereum
 // the given account. If the wallet does not wrap this particular account, an
 // error is returned to avoid account leakage (even though in theory we may be
 // able to sign via our shared keystore backend).
+// SignHash用指定account来sign给定的哈希
 func (w *keystoreWallet) SignHash(account accounts.Account, hash []byte) ([]byte, error) {
 	// Make sure the requested account is contained within
 	if account.Address != w.account.Address {
@@ -92,6 +95,7 @@ func (w *keystoreWallet) SignHash(account accounts.Account, hash []byte) ([]byte
 		return nil, accounts.ErrUnknownAccount
 	}
 	// Account seems valid, request the keystore to sign
+	// 如果account是合法的，则请求keystore进行sign
 	return w.keystore.SignHash(account, hash)
 }
 
@@ -99,6 +103,7 @@ func (w *keystoreWallet) SignHash(account accounts.Account, hash []byte) ([]byte
 // with the given account. If the wallet does not wrap this particular account,
 // an error is returned to avoid account leakage (even though in theory we may
 // be able to sign via our shared keystore backend).
+// SignTx尝试用给定的account去sign给定的transaction
 func (w *keystoreWallet) SignTx(account accounts.Account, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
 	// Make sure the requested account is contained within
 	if account.Address != w.account.Address {

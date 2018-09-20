@@ -136,6 +136,7 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 	id := uuid.NewRandom()
 	key := &Key{
 		Id:         id,
+		// private key -> public key -> address
 		Address:    crypto.PubkeyToAddress(privateKeyECDSA.PublicKey),
 		PrivateKey: privateKeyECDSA,
 	}
@@ -163,11 +164,14 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 	return key
 }
 
+// 创建一个新的key类型
 func newKey(rand io.Reader) (*Key, error) {
+	// 首先生成一个ecdsa private key
 	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
 	if err != nil {
 		return nil, err
 	}
+	// 再根据这个ecdsa private key生成一个Key
 	return newKeyFromECDSA(privateKeyECDSA), nil
 }
 

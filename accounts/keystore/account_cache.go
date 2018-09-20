@@ -63,10 +63,12 @@ func (err *AmbiguousAddrError) Error() string {
 }
 
 // accountCache is a live index of all accounts in the keystore.
+// accountCache是keystore中所有accounts的live index
 type accountCache struct {
 	keydir   string
 	watcher  *watcher
 	mu       sync.Mutex
+	// accountsByURL本质上就是[]accounts.Account
 	all      accountsByURL
 	byAddr   map[common.Address][]accounts.Account
 	throttle *time.Timer

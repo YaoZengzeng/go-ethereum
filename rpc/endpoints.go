@@ -23,6 +23,7 @@ import (
 )
 
 // StartHTTPEndpoint starts the HTTP RPC endpoint, configured with cors/vhosts/modules
+// StartHTTPEndpoint启动一个HTTP RPC endpoint，用cors/vhosts/modules进行配置
 func StartHTTPEndpoint(endpoint string, apis []API, modules []string, cors []string, vhosts []string, timeouts HTTPTimeouts) (net.Listener, *Server, error) {
 	// Generate the whitelist based on the allowed modules
 	whitelist := make(map[string]bool)
@@ -83,6 +84,7 @@ func StartWSEndpoint(endpoint string, apis []API, modules []string, wsOrigins []
 }
 
 // StartIPCEndpoint starts an IPC endpoint.
+// StartIPCEndpoint启动一个IPC endpoint
 func StartIPCEndpoint(ipcEndpoint string, apis []API) (net.Listener, *Server, error) {
 	// Register all the APIs exposed by the services.
 	handler := NewServer()

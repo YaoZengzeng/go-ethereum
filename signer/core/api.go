@@ -39,6 +39,7 @@ import (
 // ExternalAPI defines the external API through which signing requests are made.
 // ExternalAPI定义了external API，可以通过它对请求进行signing
 type ExternalAPI interface {
+	// ExternalAPI包含的操作为sign以及对于account进行管理的操作
 	// List available accounts
 	List(ctx context.Context) (Accounts, error)
 	// New request to create a new account
@@ -69,6 +70,8 @@ type SignerUI interface {
 	ApproveImport(request *ImportRequest) (ImportResponse, error)
 	// ApproveListing prompt the user for confirmation to list accounts
 	// the list of accounts to list can be modified by the UI
+	// ApproveListing提示用户确认对于list account的确认
+	// list的accounts可以被UI修改
 	ApproveListing(request *ListRequest) (ListResponse, error)
 	// ApproveNewAccount prompt the user for confirmation to create new Account, and reveal to caller
 	ApproveNewAccount(request *NewAccountRequest) (NewAccountResponse, error)
@@ -78,9 +81,12 @@ type SignerUI interface {
 	ShowInfo(message string)
 	// OnApprovedTx notifies the UI about a transaction having been successfully signed.
 	// This method can be used by a UI to keep track of e.g. how much has been sent to a particular recipient.
+	// OnApprovedTx通知UI一个transaction已经被成功signed了
+	// 这个方法可以被UI用于追踪已经给一个特定的recipient发送了多少
 	OnApprovedTx(tx ethapi.SignTransactionResult)
 	// OnSignerStartup is invoked when the signer boots, and tells the UI info about external API location and version
 	// information
+	// OnSignerStartup会在signer启动的时候被调用，并且告诉UI关于external API的位置以及版本信息
 	OnSignerStartup(info StartupInfo)
 }
 
@@ -239,6 +245,7 @@ func NewSignerAPI(chainID int64, ksLocation string, noUSB bool, ui SignerUI, abi
 // List返回当前signer管理的wallet数目，每个wallets可以包含多个accounts
 func (api *SignerAPI) List(ctx context.Context) (Accounts, error) {
 	var accs []Account
+	// 遍历wallets获取所有的accounts
 	for _, wallet := range api.am.Wallets() {
 		for _, acc := range wallet.Accounts() {
 			acc := Account{Typ: "Account", URL: wallet.URL(), Address: acc.Address}
@@ -331,6 +338,7 @@ func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, meth
 		err    error
 		result SignTxResponse
 	)
+	// msgs是ValidationMessage
 	msgs, err := api.validator.ValidateTransaction(&args, methodSelector)
 	if err != nil {
 		return nil, err
@@ -355,22 +363,26 @@ func (api *SignerAPI) SignTransaction(ctx context.Context, args SendTxArgs, meth
 		acc    accounts.Account
 		wallet accounts.Wallet
 	)
+	// 找到transaction的发起方所在的wallet
 	acc = accounts.Account{Address: result.Transaction.From.Address()}
 	wallet, err = api.am.Find(acc)
 	if err != nil {
 		return nil, err
 	}
 	// Convert fields into a real transaction
+	// 将各个字段转换为真正的transaction
 	var unsignedTx = result.Transaction.toTransaction()
 
 	// The one to sign is the one that was returned from the UI
 	// 进行sign的wallet是从UI返回的wallet
+	// 用从ui返回的password对transaction进行sign
 	signedTx, err := wallet.SignTxWithPassphrase(acc, result.Password, unsignedTx, api.chainID)
 	if err != nil {
 		api.UI.ShowError(err.Error())
 		return nil, err
 	}
 
+	// 对transaction进行编码，并构建一个SignTransactionResult
 	rlpdata, err := rlp.EncodeToBytes(signedTx)
 	response := ethapi.SignTransactionResult{Raw: rlpdata, Tx: signedTx}
 
