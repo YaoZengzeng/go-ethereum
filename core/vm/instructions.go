@@ -667,6 +667,7 @@ func opGas(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
 
 func opCreate(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	var (
+		// 栈里面第一个值为value, 第二个为offset, 第三个为size
 		value        = stack.pop()
 		offset, size = stack.pop(), stack.pop()
 		input        = memory.Get(offset.Int64(), size.Int64())
@@ -710,8 +711,10 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memo
 	// Apply EIP150
 	gas -= gas / 64
 	contract.UseGas(gas)
+	// 在evm中执行Create2
 	res, addr, returnGas, suberr := interpreter.evm.Create2(contract, input, gas, endowment, salt)
 	// Push item on the stack based on the returned error.
+	// 根据返回的error将item push其中
 	if suberr != nil {
 		stack.push(interpreter.intPool.getZero())
 	} else {

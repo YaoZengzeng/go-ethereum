@@ -175,6 +175,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 		pc   = uint64(0) // program counter
 		cost uint64
 		// copies used by tracer
+		// 为tracer保存的一些copies
 		pcCopy  uint64 // needed for the deferred Tracer
 		gasCopy uint64 // for Tracer to log gas remaining before execution
 		logged  bool   // deferred Tracer should ignore already logged steps
@@ -204,6 +205,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 	for atomic.LoadInt32(&in.evm.abort) == 0 {
 		if in.cfg.Debug {
 			// Capture pre-execution values for tracing.
+			// 如果需要debug，则事先记录pc和gas
 			logged, pcCopy, gasCopy = false, pc, contract.Gas
 		}
 
@@ -220,6 +222,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte) (ret []byte, err
 			return nil, err
 		}
 		// If the operation is valid, enforce and write restrictions
+		// 如果操作是合法的，则强制进行写限制
 		if err := in.enforceRestrictions(op, operation, stack); err != nil {
 			return nil, err
 		}

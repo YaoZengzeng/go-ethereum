@@ -53,6 +53,7 @@ func makeSlice(ptr unsafe.Pointer, size uint) []byte {
 }
 
 // popSlice pops a buffer off the JavaScript stack and returns it as a slice.
+// popSlice从JavaScript stack中pop一个buffer并且返回一个slice
 func popSlice(ctx *duktape.Context) []byte {
 	blob := common.CopyBytes(makeSlice(ctx.GetBuffer(-1)))
 	ctx.Pop()
@@ -282,10 +283,12 @@ type Tracer struct {
 
 	vm *duktape.Context // Javascript VM instance
 
+	// tracer JavaScript对象的栈索引
 	tracerObject int // Stack index of the tracer JavaScript object
 	stateObject  int // Stack index of the global state to pull arguments from
 
 	opWrapper       *opWrapper       // Wrapper around the VM opcode
+	// stackWrapper仅仅只是对vm.Stack的一个封装
 	stackWrapper    *stackWrapper    // Wrapper around the VM stack
 	memoryWrapper   *memoryWrapper   // Wrapper around the VM memory
 	contractWrapper *contractWrapper // Wrapper around the contract object
@@ -297,6 +300,7 @@ type Tracer struct {
 	depthValue *uint   // Swappable depth value wrapped by a log accessor
 	errorValue *string // Swappable error value wrapped by a log accessor
 
+	// 在执行期间收集的Transaction context
 	ctx map[string]interface{} // Transaction context gathered throughout execution
 	err error                  // Error, if one has occurred
 
@@ -327,6 +331,7 @@ func New(code string) (*Tracer, error) {
 		depthValue:      new(uint),
 	}
 	// Set up builtins for this environment
+	// 为该环境设置builtins
 	tracer.vm.PushGlobalGoFunction("toHex", func(ctx *duktape.Context) int {
 		ctx.PushString(hexutil.Encode(popSlice(ctx)))
 		return 1
@@ -412,6 +417,7 @@ func New(code string) (*Tracer, error) {
 	tracer.vm.Pop()
 
 	// Tracer is valid, inject the big int library to access large numbers
+	// 注入big int库
 	tracer.vm.EvalString(bigIntegerJS)
 	tracer.vm.PutGlobalString("bigInt")
 
@@ -470,8 +476,10 @@ func (jst *Tracer) Stop(err error) {
 
 // call executes a method on a JS object, catching any errors, formatting and
 // returning them as error objects.
+// call执行JS对象中的一个方法，捕捉错误，格式化他们并且以error objects对象返回
 func (jst *Tracer) call(method string, args ...string) (json.RawMessage, error) {
 	// Execute the JavaScript call and return any error
+	// 执行JavaScript调用并且返回任何的error
 	jst.vm.PushString(method)
 	for _, arg := range args {
 		jst.vm.GetPropString(jst.stateObject, arg)
@@ -492,6 +500,7 @@ func wrapError(context string, err error) error {
 }
 
 // CaptureStart implements the Tracer interface to initialize the tracing operation.
+// CaptureStart实现了Tracer接口用于初始化一个tracing操作
 func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) error {
 	jst.ctx["type"] = "CALL"
 	if create {
@@ -507,6 +516,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
+// CaptureState实现了Tracer接口用于追踪VM中单步的执行
 func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
@@ -519,6 +529,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 			jst.err = jst.reason
 			return nil
 		}
+		// 初始化jst中的op, stack等等
 		jst.opWrapper.op = op
 		jst.stackWrapper.stack = stack
 		jst.memoryWrapper.memory = memory
@@ -545,6 +556,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
+// CaptureFault实现了Tracer接口并且追踪在执行opcode时的一个执行错误
 func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
@@ -560,6 +572,7 @@ func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 }
 
 // CaptureEnd is called after the call finishes to finalize the tracing.
+// CaptureEnd在call结束之后被调用，用于结束tracing
 func (jst *Tracer) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error {
 	jst.ctx["output"] = output
 	jst.ctx["gasUsed"] = gasUsed

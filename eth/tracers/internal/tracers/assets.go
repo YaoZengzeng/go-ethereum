@@ -347,6 +347,7 @@ func AssetNames() []string {
 }
 
 // _bindata is a table, holding each asset generator, mapped to its name.
+// _bindata是一个table, 包含了各个asset generator, 并且将它们映射到它们的name
 var _bindata = map[string]func() (*asset, error){
 	"4byte_tracer.js": _4byte_tracerJs,
 

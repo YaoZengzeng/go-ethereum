@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package tracers is a collection of JavaScript transaction tracers.
+// tracers是一系列JavaScript transaction tracers的集合
 package tracers
 
 import (
@@ -46,6 +47,7 @@ func init() {
 }
 
 // tracer retrieves a specific JavaScript tracer by name.
+// tracer通过name获取一个特定的JavaScript tracer
 func tracer(name string) (string, bool) {
 	if tracer, ok := all[name]; ok {
 		return tracer, true

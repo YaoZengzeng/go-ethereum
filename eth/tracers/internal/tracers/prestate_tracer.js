@@ -22,6 +22,7 @@
 	prestate: null,
 
 	// lookupAccount injects the specified account into the prestate object.
+	// lookupAccount将特定的account注入到prestate对象中
 	lookupAccount: function(addr, db){
 		var acc = toHex(addr);
 		if (this.prestate[acc] === undefined) {
@@ -36,6 +37,7 @@
 
 	// lookupStorage injects the specified storage entry of the given account into
 	// the prestate object.
+	// lookupStorage将给定账号的特定storage entry注入到prestate object中
 	lookupStorage: function(addr, key, db){
 		var acc = toHex(addr);
 		var idx = toHex(key);
@@ -50,6 +52,7 @@
 
 	// result is invoked when all the opcodes have been iterated over and returns
 	// the final result of the tracing.
+	// result会在所有的opcodes都已经被遍历后被调用，并且会返回tracing的最终结果
 	result: function(ctx, db) {
 		// At this point, we need to deduct the 'value' from the
 		// outer transaction, and move it back to the origin
@@ -82,6 +85,7 @@
 			this.lookupAccount(log.contract.getAddress(), db);
 		}
 		// Whenever new state is accessed, add it to the prestate
+		// 当出现了一个新的state的时候，将它增加到prestate中
 		switch (log.op.toString()) {
 			case "EXTCODECOPY": case "EXTCODESIZE": case "BALANCE":
 				this.lookupAccount(toAddress(log.stack.peek(0).toString(16)), db);

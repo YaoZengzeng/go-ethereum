@@ -79,6 +79,7 @@ func CreateAddress(b common.Address, nonce uint64) common.Address {
 
 // CreateAddress2 creates an ethereum address given the address bytes, initial
 // contract code and a salt.
+// CreateAddress2根据给定的address bytes，初始化的contract code以及salt创建一个ethereum address
 func CreateAddress2(b common.Address, salt common.Hash, code []byte) common.Address {
 	return common.BytesToAddress(Keccak256([]byte{0xff}, b.Bytes(), salt.Bytes(), code)[12:])
 }
