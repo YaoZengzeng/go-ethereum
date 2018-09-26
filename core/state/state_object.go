@@ -82,7 +82,9 @@ type stateObject struct {
 	trie Trie // storage trie, which becomes non-nil on first access
 	code Code // contract bytecode, which gets set when code is loaded
 
+	// cachedStorage用于防止重复读
 	cachedStorage Storage // Storage entry cache to avoid duplicate reads
+	// dirtyStorage存放了那些需要被flush到磁盘的Storage
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk
 
 	// Cache flags.

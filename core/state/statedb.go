@@ -470,11 +470,13 @@ func (db *StateDB) ForEachStorage(addr common.Address, cb func(key, value common
 
 // Copy creates a deep, independent copy of the state.
 // Snapshots of the copied state cannot be applied to the copy.
+// Copy创建一个关于state的深度的，独立的拷贝
 func (self *StateDB) Copy() *StateDB {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	// Copy all the basic fields, initialize the memory ones
+	// 拷贝所有的基本字段
 	state := &StateDB{
 		db:                self.db,
 		trie:              self.db.CopyTrie(self.trie),
@@ -487,6 +489,7 @@ func (self *StateDB) Copy() *StateDB {
 		journal:           newJournal(),
 	}
 	// Copy the dirty states, logs, and preimages
+	// 拷贝dirty states，logs以及preimages
 	for addr := range self.journal.dirties {
 		// As documented [here](https://github.com/ethereum/go-ethereum/pull/16485#issuecomment-380438527),
 		// and in the Finalise-method, there is a case where an object is in the journal but not
