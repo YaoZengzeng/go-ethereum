@@ -407,8 +407,11 @@ func (h *priceHeap) Pop() interface{} {
 
 // txPricedList is a price-sorted heap to allow operating on transactions pool
 // contents in a price-incrementing way.
+// txPricedList是一个按照price进行排序的heap从而允许以price-incrementing的方式操作
+// transactions pool
 type txPricedList struct {
 	all    *txLookup  // Pointer to the map of all transactions
+	// 所有存储的transactions的price的heap
 	items  *priceHeap // Heap of prices of all the stored transactions
 	stales int        // Number of stale price points to (re-heap trigger)
 }

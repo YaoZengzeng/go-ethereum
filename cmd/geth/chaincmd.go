@@ -44,6 +44,7 @@ var (
 	initCommand = cli.Command{
 		Action:    utils.MigrateFlags(initGenesis),
 		Name:      "init",
+		// init用于启动并且初始化一个新的genesis block
 		Usage:     "Bootstrap and initialize a new genesis block",
 		ArgsUsage: "<genesisPath>",
 		Flags: []cli.Flag{
@@ -55,6 +56,8 @@ var (
 The init command initializes a new genesis block and definition for the network.
 This is a destructive action and changes the network in which you will be
 participating.
+init命令初始化一个新的genesis block以及network的定义，这是一个有破坏性的命令，它会改变你所处的网络
+它期望将一个genesis file作为参数
 
 It expects the genesis file as argument.`,
 	}
@@ -174,6 +177,8 @@ Use "ethereum dump 0" to dump the genesis block.`,
 
 // initGenesis will initialise the given JSON format genesis file and writes it as
 // the zero'd block (i.e. genesis) or will fail hard if it can't succeed.
+// initGenesis会初始化一个给定的JSON形式的genesis file并且将它写入作为第0个block（即genesis）
+// 如果没有成功的话，直接fail
 func initGenesis(ctx *cli.Context) error {
 	// Make sure we have a valid genesis JSON
 	genesisPath := ctx.Args().First()

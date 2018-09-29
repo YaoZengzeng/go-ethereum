@@ -39,6 +39,7 @@ import (
 // Node is a container on which services can be registered.
 // Node是一个用于注册服务的容器
 type Node struct {
+	// 在stack的service之间使用的event multiplexer
 	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
 	config   *Config
 	accman   *accounts.Manager
@@ -50,9 +51,12 @@ type Node struct {
 	serverConfig p2p.Config
 	server       *p2p.Server // Currently running P2P networking layer
 
+	// 按照依赖顺序的service constructor
 	serviceFuncs []ServiceConstructor     // Service constructors (in dependency order)
+	// 当前正在运行的services
 	services     map[reflect.Type]Service // Currently running services
 
+	// 当前node提供的API list
 	rpcAPIs       []rpc.API   // List of APIs currently provided by the node
 	inprocHandler *rpc.Server // In-process RPC request handler to process the API requests
 
@@ -102,6 +106,7 @@ func New(conf *Config) (*Node, error) {
 	}
 	// Ensure that the AccountManager method works before the node has started.
 	// We rely on this in cmd/geth.
+	// 确保在node启动之前AccountManager方法都是work的
 	am, ephemeralKeystore, err := makeAccountManager(conf)
 	if err != nil {
 		return nil, err
@@ -111,6 +116,8 @@ func New(conf *Config) (*Node, error) {
 	}
 	// Note: any interaction with Config that would create/touch files
 	// in the data directory or instance directory is delayed until Start.
+	// 所有和Config的交互，不论是会在data directory还是instance directory都会被延迟到
+	// Start之后
 	return &Node{
 		accman:            am,
 		ephemeralKeystore: ephemeralKeystore,
@@ -175,6 +182,7 @@ func (n *Node) Start() error {
 
 	// Otherwise copy and specialize the P2P configuration
 	services := make(map[reflect.Type]Service)
+	// 调用每个service的serviceFuncs函数
 	for _, constructor := range n.serviceFuncs {
 		// Create a new context for the particular service
 		// 为特定的service创建一个新的context
@@ -188,6 +196,7 @@ func (n *Node) Start() error {
 			ctx.services[kind] = s
 		}
 		// Construct and save the service
+		// 构建并且保存service
 		service, err := constructor(ctx)
 		if err != nil {
 			return err
@@ -199,6 +208,7 @@ func (n *Node) Start() error {
 		services[kind] = service
 	}
 	// Gather the protocols and start the freshly assembled P2P server
+	// 收集protocols并且启动新组建的P2P server
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
@@ -211,6 +221,7 @@ func (n *Node) Start() error {
 	started := []reflect.Type{}
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
+		// 启动下一个service，如果遇到了错误，则停止之前所有已经启动的service
 		if err := service.Start(running); err != nil {
 			for _, kind := range started {
 				services[kind].Stop()
@@ -220,6 +231,7 @@ func (n *Node) Start() error {
 			return err
 		}
 		// Mark the service started for potential cleanup
+		// 将service标记为started，用于潜在的清理
 		started = append(started, kind)
 	}
 	// Lastly start the configured RPC interfaces
@@ -580,7 +592,10 @@ func (n *Node) EventMux() *event.TypeMux {
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
+// OpenDatabase用给定的name打开一个在node的instance directory中（如果不存在就创建一个）已经存在databse
+// 如果node是临时的 ，就创建一个memory database
 func (n *Node) OpenDatabase(name string, cache, handles int) (ethdb.Database, error) {
+	// 如果没有datadir，就是一个临时节点
 	if n.config.DataDir == "" {
 		return ethdb.NewMemDatabase(), nil
 	}

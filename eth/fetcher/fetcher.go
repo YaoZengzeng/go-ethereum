@@ -148,6 +148,7 @@ type Fetcher struct {
 }
 
 // New creates a block fetcher to retrieve blocks based on hash announcements.
+// New创建一个block fetcher，根据hash announcements来获取blocks
 func New(getBlock blockRetrievalFn, verifyHeader headerVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
 	return &Fetcher{
 		notify:         make(chan *announce),
@@ -176,6 +177,8 @@ func New(getBlock blockRetrievalFn, verifyHeader headerVerifierFn, broadcastBloc
 
 // Start boots up the announcement based synchroniser, accepting and processing
 // hash notifications and block fetches until termination requested.
+// Start启动一个基于announcement的synchroniser，接收并且处理hash notification
+// fetches会一直阻塞，直到请求结束
 func (f *Fetcher) Start() {
 	go f.loop()
 }

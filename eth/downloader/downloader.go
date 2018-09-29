@@ -104,6 +104,7 @@ type Downloader struct {
 	peers   *peerSet // Set of active peers from which download can proceed
 	stateDB ethdb.Database
 
+	// download requests请求的rount trip time
 	rttEstimate   uint64 // Round trip time to target for download requests
 	rttConfidence uint64 // Confidence in the estimated RTT (unit: millionths to allow atomic ops)
 
@@ -135,6 +136,7 @@ type Downloader struct {
 	headerProcCh  chan []*types.Header // [eth/62] Channel to feed the header processor new tasks
 
 	// for stateFetcher
+	// 用于获取node state
 	stateSyncStart chan *stateSync
 	trackStateReq  chan *stateReq
 	stateCh        chan dataPack // [eth/63] Channel receiving inbound node state data
@@ -355,6 +357,7 @@ func (d *Downloader) Synchronise(id string, head common.Hash, td *big.Int, mode 
 // 如果任何检查失败了则会返回错误
 func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode SyncMode) error {
 	// Mock out the synchronisation if testing
+	// 指定了synchroniseMock则进行测试
 	if d.synchroniseMock != nil {
 		return d.synchroniseMock(id, hash)
 	}
@@ -369,6 +372,7 @@ func (d *Downloader) synchronise(id string, hash common.Hash, td *big.Int, mode 
 		log.Info("Block synchronisation started")
 	}
 	// Reset the queue, peer set and wake channels to clean any internal leftover state
+	// 重置队列以及peer set，并且清除channels里面遗留的state
 	d.queue.Reset()
 	d.peers.Reset()
 

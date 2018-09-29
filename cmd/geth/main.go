@@ -157,6 +157,7 @@ var (
 
 func init() {
 	// Initialize the CLI app and start Geth
+	// 默认的Action为geth
 	app.Action = geth
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2013-2018 The go-ethereum Authors"
@@ -278,6 +279,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	utils.StartNode(stack)
 
 	// Unlock any account specifically requested
+	// unlock任何指定的account
 	ks := stack.AccountManager().Backends(keystore.KeyStoreType)[0].(*keystore.KeyStore)
 
 	passwords := utils.MakePasswordList(ctx)
@@ -294,6 +296,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 
 	go func() {
 		// Create a chain state reader for self-derivation
+		// 创建一个chain state reader
 		rpcClient, err := stack.Attach()
 		if err != nil {
 			utils.Fatalf("Failed to attach to self: %v", err)
@@ -301,12 +304,14 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		stateReader := ethclient.NewClient(rpcClient)
 
 		// Open any wallets already attached
+		// 打开所有已经attach的wallets
 		for _, wallet := range stack.AccountManager().Wallets() {
 			if err := wallet.Open(""); err != nil {
 				log.Warn("Failed to open wallet", "url", wallet.URL(), "err", err)
 			}
 		}
 		// Listen for wallet event till termination
+		// 监听wallet event直到结束
 		for event := range events {
 			switch event.Kind {
 			case accounts.WalletArrived:

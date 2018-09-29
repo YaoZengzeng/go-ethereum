@@ -39,7 +39,9 @@ import (
 const (
 	datadirPrivateKey      = "nodekey"            // Path within the datadir to the node's private key
 	datadirDefaultKeyStore = "keystore"           // Path within the datadir to the keystore
+	// static-nodes.json包含了static node的list
 	datadirStaticNodes     = "static-nodes.json"  // Path within the datadir to the static node list
+	// trusted-nodes.json包含了trusted node的list
 	datadirTrustedNodes    = "trusted-nodes.json" // Path within the datadir to the trusted node list
 	datadirNodeDatabase    = "nodes"              // Path within the datadir to store the node infos
 )
@@ -53,6 +55,7 @@ type Config struct {
 	// Name sets the instance name of the node. It must not contain the / character and is
 	// used in the devp2p node identifier. The instance name of geth is "geth". If no
 	// value is specified, the basename of the current executable is used.
+	// Name设置了该node的instance name
 	Name string `toml:"-"`
 
 	// UserIdent, if set, is used as an additional component in the devp2p node identifier.
@@ -67,6 +70,8 @@ type Config struct {
 	// registered services, instead those can use utility methods to create/access
 	// databases or flat files. This enables ephemeral nodes which can fully reside
 	// in memory.
+	// DataDir是node用于存储数据的目录，配置好的data directory不会直接被注册好的服务共享
+	// 它们需要使用utility methods来创建/访问数据库或者falt files，这样可以让临时节点彻底隔离
 	DataDir string
 
 	// Configuration of peer-to-peer networking.
@@ -75,10 +80,13 @@ type Config struct {
 	// KeyStoreDir is the file system folder that contains private keys. The directory can
 	// be specified as a relative path, in which case it is resolved relative to the
 	// current directory.
+	// KeyStoreDir是用来存储private keys的目录
 	//
 	// If KeyStoreDir is empty, the default location is the "keystore" subdirectory of
 	// DataDir. If DataDir is unspecified and KeyStoreDir is empty, an ephemeral directory
 	// is created by New and destroyed when the node is stopped.
+	// 如果KeyStoreDir为空，则默认为DataDir的"keystore"子目录，如果未指定DataDir且KeyStoreDir为空
+	// 则在New的时候创建一个临时目录，并且在node停止之后删除
 	KeyStoreDir string `toml:",omitempty"`
 
 	// UseLightweightKDF lowers the memory and CPU requirements of the key store
@@ -86,6 +94,7 @@ type Config struct {
 	UseLightweightKDF bool `toml:",omitempty"`
 
 	// NoUSB disables hardware wallet monitoring and connectivity.
+	// NoUSB用于禁止hardware wallet的监听和连接
 	NoUSB bool `toml:",omitempty"`
 
 	// IPCPath is the requested location to place the IPC endpoint. If the path is
@@ -182,6 +191,7 @@ func (c *Config) IPCEndpoint() string {
 }
 
 // NodeDB returns the path to the discovery node database.
+// NodeDB返回discovery node database的路径
 func (c *Config) NodeDB() string {
 	if c.DataDir == "" {
 		return "" // ephemeral
@@ -350,6 +360,7 @@ func (c *Config) TrustedNodes() []*discover.Node {
 
 // parsePersistentNodes parses a list of discovery node URLs loaded from a .json
 // file from within the data directory.
+// parsePersistentNodes从data目录的json文件中解析一系列的discovery node URLs
 func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 	// Short circuit if no node config is present
 	if c.DataDir == "" {
@@ -381,6 +392,7 @@ func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 }
 
 // AccountConfig determines the settings for scrypt and keydirectory
+// AccountConfig确定scrypt和key directory的设置
 func (c *Config) AccountConfig() (int, int, string, error) {
 	scryptN := keystore.StandardScryptN
 	scryptP := keystore.StandardScryptP
@@ -424,10 +436,12 @@ func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
 		return nil, "", err
 	}
 	// Assemble the account manager and supported backends
+	// 构成account manager以及支持的各种backends
 	backends := []accounts.Backend{
 		keystore.NewKeyStore(keydir, scryptN, scryptP),
 	}
 	if !conf.NoUSB {
+		// 创建各种基于USB的account backend
 		// Start a USB hub for Ledger hardware wallets
 		if ledgerhub, err := usbwallet.NewLedgerHub(); err != nil {
 			log.Warn(fmt.Sprintf("Failed to start Ledger hub, disabling: %v", err))

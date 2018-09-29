@@ -167,6 +167,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 // sanitize checks the provided user configurations and changes anything that's
 // unreasonable or unworkable.
+// sanitize检测提供的用户配置并且改变任何不合理或者不能工作的配置
 func (config *TxPoolConfig) sanitize() TxPoolConfig {
 	conf := *config
 	if conf.Rejournal < time.Second {
@@ -238,6 +239,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	config = (&config).sanitize()
 
 	// Create the transaction pool with its initial settings
+	// 用初始化配置创建transaction pool
 	pool := &TxPool{
 		config:      config,
 		chainconfig: chainconfig,
@@ -271,6 +273,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	pool.chainHeadSub = pool.chain.SubscribeChainHeadEvent(pool.chainHeadCh)
 
 	// Start the event loop and return
+	// 启动event loop并且返回
 	pool.wg.Add(1)
 	go pool.loop()
 
@@ -380,6 +383,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 
 	if oldHead != nil && oldHead.Hash() != newHead.ParentHash {
 		// If the reorg is too deep, avoid doing it (will happen during fast sync)
+		// 如果reorg太深，则避免（在fast sync的时候会发生）
 		oldNum := oldHead.Number.Uint64()
 		newNum := newHead.Number.Uint64()
 
@@ -437,6 +441,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	pool.currentMaxGas = newHead.GasLimit
 
 	// Inject any transactions discarded due to reorgs
+	// 注入因为reorgs被移除的transactions
 	log.Debug("Reinjecting stale transactions", "count", len(reinject))
 	senderCacher.recover(pool.signer, reinject)
 	pool.addTxsLocked(reinject, false)
@@ -457,6 +462,8 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	}
 	// Check the queue and move transactions over to the pending if possible
 	// or remove those that have become invalid
+	// 检查queue并且如果可能的话移动transactions到pending
+	// 或者删除它们，如果它们非法的话
 	pool.promoteExecutables(nil)
 }
 
@@ -865,6 +872,8 @@ func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
 
 // addTxsLocked attempts to queue a batch of transactions if they are valid,
 // whilst assuming the transaction pool lock is already held.
+// addTxsLocked尝试将一批的transactions入队，如果它们合法的话
+// 同时，假设已经持有了transaction pool lock
 func (pool *TxPool) addTxsLocked(txs []*types.Transaction, local bool) []error {
 	// Add the batch of transaction, tracking the accepted ones
 	dirty := make(map[common.Address]struct{})
@@ -976,6 +985,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 		}
 	}
 	// Iterate over all accounts and promote any executable transactions
+	// 遍历所有的accounts并且提升任何可以执行的transactions
 	for _, addr := range accounts {
 		list := pool.queue[addr]
 		if list == nil {
@@ -1035,6 +1045,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 	if pending > pool.config.GlobalSlots {
 		pendingBeforeCap := pending
 		// Assemble a spam order to penalize large transactors first
+		// 创建一个优先级队列
 		spammers := prque.New()
 		for addr, list := range pool.pending {
 			// Only evict transactions from high rollers
@@ -1144,12 +1155,16 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 // demoteUnexecutables removes invalid and processed transactions from the pools
 // executable/pending queue and any subsequent transactions that become unexecutable
 // are moved back into the future queue.
+// demoteUnexecutables从pools中移除非法的和已经处理过的transactions
+// 任何之后的transactions变成不可执行的会被移到future queue
 func (pool *TxPool) demoteUnexecutables() {
 	// Iterate over all accounts and demote any non-executable transactions
+	// 遍历所有的accounts并且降级任何不能执行的transactions
 	for addr, list := range pool.pending {
 		nonce := pool.currentState.GetNonce(addr)
 
 		// Drop all transactions that are deemed too old (low nonce)
+		// 移除所有nonce太老的transactions
 		for _, tx := range list.Forward(nonce) {
 			hash := tx.Hash()
 			log.Trace("Removed old pending transaction", "hash", hash)
@@ -1157,6 +1172,7 @@ func (pool *TxPool) demoteUnexecutables() {
 			pool.priced.Removed()
 		}
 		// Drop all transactions that are too costly (low balance or out of gas), and queue any invalids back for later
+		// 移除所有耗费太多的transactions（low balance或者out of gas）
 		drops, invalids := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
 		for _, tx := range drops {
 			hash := tx.Hash()
@@ -1200,6 +1216,8 @@ func (a addressesByHeartbeat) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 
 // accountSet is simply a set of addresses to check for existence, and a signer
 // capable of deriving addresses from transactions.
+// accountSet是一个简单的address集合用来检查存在性，以及一个signer用来从transactions中
+// 得到address
 type accountSet struct {
 	accounts map[common.Address]struct{}
 	signer   types.Signer
@@ -1236,6 +1254,7 @@ func (as *accountSet) add(addr common.Address) {
 
 // txLookup is used internally by TxPool to track transactions while allowing lookup without
 // mutex contention.
+// txLookup会在TxPool中内部使用来追踪transaction而不需要争夺锁
 //
 // Note, although this type is properly protected against concurrent access, it
 // is **not** a type that should ever be mutated or even exposed outside of the
@@ -1243,6 +1262,9 @@ func (as *accountSet) add(addr common.Address) {
 // internal mechanisms. The sole purpose of the type is to permit out-of-bound
 // peeking into the pool in TxPool.Get without having to acquire the widely scoped
 // TxPool.mu mutex.
+// 虽然这个类型对于并发访问做了很好的保护，但是它不应该暴露在transaction pool以外，因为它内部的
+// 状态和pool内部的实现机制是耦合的。这个类型的唯一目的就是允许对于TxPool.Get的访问而不需要获取
+// 大范围的TxPool.mu锁
 type txLookup struct {
 	all  map[common.Hash]*types.Transaction
 	lock sync.RWMutex

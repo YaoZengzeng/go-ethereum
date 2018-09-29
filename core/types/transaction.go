@@ -272,6 +272,7 @@ func (s Transactions) GetRlp(i int) []byte {
 }
 
 // TxDifference returns a new set which is the difference between a and b.
+// TxDifference返回一个新的set，其中包含了a和b的不同点
 func TxDifference(a, b Transactions) Transactions {
 	keep := make(Transactions, 0, len(a))
 

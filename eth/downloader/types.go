@@ -23,6 +23,7 @@ import (
 )
 
 // peerDropFn is a callback type for dropping a peer detected as malicious.
+// peerDropFn是删除一个被检测为恶意的peer时的回调函数
 type peerDropFn func(id string)
 
 // dataPack is a data message returned by a peer for some query.

@@ -53,6 +53,8 @@ const (
 
 // Whisper represents a dark communication interface through the Ethereum
 // network, using its very own P2P communication layer.
+// Whisper代表了Ethereum network之间的一个dark communication interface
+// 使用它自己的P2P communication layer
 type Whisper struct {
 	protocol p2p.Protocol // Protocol description and parameters
 	filters  *Filters     // Message filters installed with Subscribe function

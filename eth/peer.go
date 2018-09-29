@@ -67,6 +67,7 @@ type PeerInfo struct {
 }
 
 // propEvent is a block propagation, waiting for its turn in the broadcast queue.
+// propEvent是一个block propagation，在broadcast中等待
 type propEvent struct {
 	block *types.Block
 	td    *big.Int
@@ -85,11 +86,14 @@ type peer struct {
 	td   *big.Int
 	lock sync.RWMutex
 
+	// KnownTxs和KnowBlocks是已知peer包含的transaction和block
 	knownTxs    mapset.Set                // Set of transaction hashes known to be known by this peer
 	knownBlocks mapset.Set                // Set of block hashes known to be known by this peer
+	// 需要广播给peer的transaction和blocks的队列
 	queuedTxs   chan []*types.Transaction // Queue of transactions to broadcast to the peer
 	queuedProps chan *propEvent           // Queue of blocks to broadcast to the peer
 	queuedAnns  chan *types.Block         // Queue of blocks to announce to the peer
+	// 用来停止broadcast的channel
 	term        chan struct{}             // Termination channel to stop the broadcaster
 }
 
@@ -156,6 +160,7 @@ func (p *peer) Info() *PeerInfo {
 
 // Head retrieves a copy of the current head hash and total difficulty of the
 // peer.
+// Head获取current head hash的拷贝以及peer的td
 func (p *peer) Head() (hash common.Hash, td *big.Int) {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -204,10 +209,13 @@ func (p *peer) SendTransactions(txs types.Transactions) error {
 
 // AsyncSendTransactions queues list of transactions propagation to a remote
 // peer. If the peer's broadcast queue is full, the event is silently dropped.
+// AsyncSendTransactions将一系列要发送给远程peer的transactions加入队列
+// 如果peer的广播队列已经满了，则event被默默删除
 func (p *peer) AsyncSendTransactions(txs []*types.Transaction) {
 	select {
 	case p.queuedTxs <- txs:
 		for _, tx := range txs {
+			// 成功送入队列之后，将这些txs标志为peer已知的
 			p.knownTxs.Add(tx.Hash())
 		}
 	default:
@@ -249,6 +257,8 @@ func (p *peer) SendNewBlock(block *types.Block, td *big.Int) error {
 
 // AsyncSendNewBlock queues an entire block for propagation to a remote peer. If
 // the peer's broadcast queue is full, the event is silently dropped.
+// AsyncSendNewBlock将一个完整的用于传输的block加入队列中，如果peer的broadcast queue已经满了
+// 则该event会被默默丢弃
 func (p *peer) AsyncSendNewBlock(block *types.Block, td *big.Int) {
 	select {
 	case p.queuedProps <- &propEvent{block: block, td: td}:
@@ -406,6 +416,7 @@ type peerSet struct {
 }
 
 // newPeerSet creates a new peer set to track the active participants.
+// newPeerSet创建一个新的peer set用来追踪actice participants
 func newPeerSet() *peerSet {
 	return &peerSet{
 		peers: make(map[string]*peer),
@@ -480,6 +491,7 @@ func (ps *peerSet) PeersWithoutBlock(hash common.Hash) []*peer {
 
 // PeersWithoutTx retrieves a list of peers that do not have a given transaction
 // in their set of known hashes.
+// PeersWithoutTx获取一系列的peers，他们还不知道给定的transaction的哈希
 func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()
@@ -494,6 +506,7 @@ func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
 }
 
 // BestPeer retrieves the known peer with the currently highest total difficulty.
+// BestPeer获取当前已知的peer中td最高的一个
 func (ps *peerSet) BestPeer() *peer {
 	ps.lock.RLock()
 	defer ps.lock.RUnlock()

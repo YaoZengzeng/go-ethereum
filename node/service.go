@@ -76,21 +76,25 @@ func (ctx *ServiceContext) Service(service interface{}) error {
 type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 
 // Service is an individual protocol that can be registered into a node.
+// Service是一个单独的protocol，它能被注册到node中
 //
 // Notes:
 //
 // • Service life-cycle management is delegated to the node. The service is allowed to
 // initialize itself upon creation, but no goroutines should be spun up outside of the
 // Start method.
+// Service的生命周期是下放到node的，service允许在创建的时候初始化自己，但是不能在Start方法之外创建goroutine
 //
 // • Restart logic is not required as the node will create a fresh instance
 // every time a service is started.
+// Restart的逻辑是不需要的，因为每次service启动的时候node都会创建一个新的实例
 type Service interface {
 	// Protocols retrieves the P2P protocols the service wishes to start.
 	// Protocols用于获取service希望启动的P2P protocols
 	Protocols() []p2p.Protocol
 
 	// APIs retrieves the list of RPC descriptors the service provides
+	// APIs获取service提供的一系列RPC descriptors
 	APIs() []rpc.API
 
 	// Start is called after all services have been constructed and the networking

@@ -33,6 +33,7 @@ import (
 )
 
 // Client defines typed wrappers for the Ethereum RPC API.
+// Client定义了Ethereum RPC API的typed wrappers
 type Client struct {
 	c *rpc.Client
 }
@@ -51,6 +52,7 @@ func DialContext(ctx context.Context, rawurl string) (*Client, error) {
 }
 
 // NewClient creates a client that uses the given RPC client.
+// NewClient用给定的RPC client创建一个client
 func NewClient(c *rpc.Client) *Client {
 	return &Client{c}
 }

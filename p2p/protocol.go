@@ -23,6 +23,7 @@ import (
 )
 
 // Protocol represents a P2P subprotocol implementation.
+// Protocol代表一个P2P子协议的实现
 type Protocol struct {
 	// Name should contain the official protocol name,
 	// often a three-letter word.
@@ -51,6 +52,8 @@ type Protocol struct {
 	// PeerInfo is an optional helper method to retrieve protocol specific metadata
 	// about a certain peer in the network. If an info retrieval function is set,
 	// but returns nil, it is assumed that the protocol handshake is still running.
+	// PeerInfo是一个可选的helper method用来获取网络中的特定peer的特定metadata
+	// 如果设置了retrieval function但是返回nil，这会假设protocol handshake还在运行
 	PeerInfo func(id discover.NodeID) interface{}
 }
 

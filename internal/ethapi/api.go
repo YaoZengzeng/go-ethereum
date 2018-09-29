@@ -1466,6 +1466,7 @@ func (api *PrivateDebugAPI) SetHead(number hexutil.Uint64) {
 }
 
 // PublicNetAPI offers network related RPC methods
+// PublicNetAPI提供network相关的RPC方法
 type PublicNetAPI struct {
 	net            *p2p.Server
 	networkVersion uint64

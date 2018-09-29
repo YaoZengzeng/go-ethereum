@@ -31,13 +31,18 @@ import (
 // channel. It receives a value if there is an issue with the subscription (e.g. the
 // network connection delivering the events has been closed). Only one value will ever be
 // sent.
+// Subscriptions会在创建的时候失败，失败会通过一个error channel被播报，它会接收到一个value，如果
+// 有一个和订阅相关的事情发生（例如，传递events的网络被关闭）。只有一个value会被传送
 //
 // The error channel is closed when the subscription ends successfully (i.e. when the
 // source of events is closed). It is also closed when Unsubscribe is called.
+// 当订阅成功结束的时候，error channel就会被关闭，当Unsubscribe被调用的时候，也会被关闭
 //
 // The Unsubscribe method cancels the sending of events. You must call Unsubscribe in all
 // cases to ensure that resources related to the subscription are released. It can be
 // called any number of times.
+// Unsubscribe方法会取消events的发送，我们必须在所有情况下都要取消订阅，从而保证和订阅相关的资源都能被释放
+// 它可以被调用任意多次
 type Subscription interface {
 	Err() <-chan error // returns the error channel
 	Unsubscribe()      // cancels sending of events, closing the error channel

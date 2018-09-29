@@ -88,6 +88,7 @@ func (d *Downloader) stateFetcher() {
 
 // runStateSync runs a state synchronisation until it completes or another root
 // hash is requested to be switched over to.
+// runStateSync进行state的同步直到完成或者请求了另一个root hash
 func (d *Downloader) runStateSync(s *stateSync) *stateSync {
 	var (
 		active   = make(map[string]*stateReq) // Currently in-flight requests
@@ -211,6 +212,7 @@ func (d *Downloader) runStateSync(s *stateSync) *stateSync {
 
 // stateSync schedules requests for downloading a particular state trie defined
 // by a given state root.
+// stateSync调度下载由给定的state root决定的特定的state trie请求
 type stateSync struct {
 	d *Downloader // Downloader instance to access and manage current peerset
 

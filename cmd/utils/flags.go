@@ -1196,6 +1196,7 @@ func RegisterDashboardService(stack *node.Node, cfg *dashboard.Config, commit st
 }
 
 // RegisterShhService configures Whisper and adds it to the given node.
+// RegisterShhService配置Whisper并且将它加入到给定的节点
 func RegisterShhService(stack *node.Node, cfg *whisper.Config) {
 	if err := stack.Register(func(n *node.ServiceContext) (node.Service, error) {
 		return whisper.New(cfg), nil
@@ -1206,6 +1207,7 @@ func RegisterShhService(stack *node.Node, cfg *whisper.Config) {
 
 // RegisterEthStatsService configures the Ethereum Stats daemon and adds it to
 // the given node.
+// RegisterEthStatsService配置Ethereum Stats deamon并且将它加入到给定的node
 func RegisterEthStatsService(stack *node.Node, url string) {
 	if err := stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		// Retrieve both eth and les services

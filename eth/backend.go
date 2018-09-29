@@ -69,8 +69,11 @@ type Ethereum struct {
 	shutdownChan chan bool // Channel for shutting down the Ethereum
 
 	// Handlers
+	// transaction pool
 	txPool          *core.TxPool
+	// block chain
 	blockchain      *core.BlockChain
+	// protocol manager
 	protocolManager *ProtocolManager
 	lesServer       LesServer
 
@@ -169,8 +172,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	if config.TxPool.Journal != "" {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
+	// 创建transaction pool
 	eth.txPool = core.NewTxPool(config.TxPool, eth.chainConfig, eth.blockchain)
 
+	// 创建protocol manager
+	// txPool, consensus engine以及blockchain都会传递给protocol manager
 	if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.SyncMode, config.NetworkId, eth.eventMux, eth.txPool, eth.engine, eth.blockchain, chainDb); err != nil {
 		return nil, err
 	}
@@ -224,6 +230,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (ethdb.Data
 // CreateConsensusEngine创建所需的consensus engine实例用于Ethereum service
 func CreateConsensusEngine(ctx *node.ServiceContext, config *ethash.Config, chainConfig *params.ChainConfig, db ethdb.Database) consensus.Engine {
 	// If proof-of-authority is requested, set it up
+	// 如果请求proof-of-authority，则对它进行设置
 	if chainConfig.Clique != nil {
 		return clique.New(chainConfig.Clique, db)
 	}
@@ -410,9 +417,11 @@ func (s *Ethereum) Start(srvr *p2p.Server) error {
 	s.startBloomHandlers()
 
 	// Start the RPC service
+	// 启动RPC服务
 	s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
+	// 基于server limit搞清楚max peers count
 	maxPeers := srvr.MaxPeers
 	if s.config.LightServ > 0 {
 		if s.config.LightPeers >= srvr.MaxPeers {
