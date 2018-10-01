@@ -15,6 +15,7 @@
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
 // Package p2p implements the Ethereum p2p network protocols.
+// p2p包实现了Ethereum的p2p网络协议
 package p2p
 
 import (
@@ -62,6 +63,7 @@ type Config struct {
 
 	// MaxPeers is the maximum number of peers that can be
 	// connected. It must be greater than zero.
+	// 最多可以连接的peer的数目
 	MaxPeers int
 
 	// MaxPendingPeers is the maximum number of peers that can be pending in the

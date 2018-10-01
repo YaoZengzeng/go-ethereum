@@ -111,6 +111,7 @@ func (tx *Transaction) ChainId() *big.Int {
 }
 
 // Protected returns whether the transaction is protected from replay protection.
+// Protected返回transaction是否对replay protection保护
 func (tx *Transaction) Protected() bool {
 	return isProtectedV(tx.data.V)
 }
@@ -301,6 +302,7 @@ func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 
 // TxByPrice implements both the sort and the heap interface, making it useful
 // for all at once sorting as well as individually adding and removing elements.
+// TxByPrice同时实现了sort和heap的接口，让它在排序以及增删elements的时候都非常有用
 type TxByPrice Transactions
 
 func (s TxByPrice) Len() int           { return len(s) }
@@ -366,6 +368,7 @@ func (t *TransactionsByPriceAndNonce) Peek() *Transaction {
 }
 
 // Shift replaces the current best head with the next one from the same account.
+// Shift用同一个account的下一个transactions替换当前的best head
 func (t *TransactionsByPriceAndNonce) Shift() {
 	acc, _ := Sender(t.signer, t.heads[0])
 	if txs, ok := t.txs[acc]; ok && len(txs) > 0 {

@@ -26,6 +26,7 @@ import (
 )
 
 // TypeMuxEvent is a time-tagged notification pushed to subscribers.
+// TypeMuxEvent是一个时间标记的notification，会被推送给订阅者
 type TypeMuxEvent struct {
 	Time time.Time
 	Data interface{}

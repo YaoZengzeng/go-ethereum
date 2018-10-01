@@ -521,6 +521,7 @@ func (self *StateDB) Copy() *StateDB {
 }
 
 // Snapshot returns an identifier for the current revision of the state.
+// Snapshot返回一个identifier用于标识state当前的revision
 func (self *StateDB) Snapshot() int {
 	id := self.nextRevisionId
 	self.nextRevisionId++
@@ -529,6 +530,7 @@ func (self *StateDB) Snapshot() int {
 }
 
 // RevertToSnapshot reverts all state changes made since the given revision.
+// RevertToSnapshot回退所有在给定的revision之后对state所做的改变
 func (self *StateDB) RevertToSnapshot(revid int) {
 	// Find the snapshot in the stack of valid snapshots.
 	idx := sort.Search(len(self.validRevisions), func(i int) bool {
@@ -540,6 +542,7 @@ func (self *StateDB) RevertToSnapshot(revid int) {
 	snapshot := self.validRevisions[idx].journalIndex
 
 	// Replay the journal to undo changes and remove invalidated snapshots
+	// 回放journal到undo changes并且移除无效的snapshots
 	self.journal.revert(self, snapshot)
 	self.validRevisions = self.validRevisions[:idx]
 }

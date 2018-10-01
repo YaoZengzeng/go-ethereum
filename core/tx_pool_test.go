@@ -73,6 +73,7 @@ func transaction(nonce uint64, gaslimit uint64, key *ecdsa.PrivateKey) *types.Tr
 }
 
 func pricedTransaction(nonce uint64, gaslimit uint64, gasprice *big.Int, key *ecdsa.PrivateKey) *types.Transaction {
+	// 创建一个经过签名的transaction
 	tx, _ := types.SignTx(types.NewTransaction(nonce, common.Address{}, big.NewInt(100), gaslimit, gasprice, nil), types.HomesteadSigner{}, key)
 	return tx
 }
@@ -381,6 +382,7 @@ func TestTransactionDoubleNonce(t *testing.T) {
 	tx3, _ := types.SignTx(types.NewTransaction(0, common.Address{}, big.NewInt(100), 1000000, big.NewInt(1), nil), signer, key)
 
 	// Add the first two transaction, ensure higher priced stays only
+	// 增加两个transaction，确保只会保存更高的priced
 	if replace, err := pool.add(tx1, false); err != nil || replace {
 		t.Errorf("first transaction insert failed (%v) or reported replacement (%v)", err, replace)
 	}
@@ -449,6 +451,7 @@ func TestTransactionNonceRecovery(t *testing.T) {
 		t.Error(err)
 	}
 	// simulate some weird re-order of transactions and missing nonce(s)
+	// 模拟一些奇怪的transactions re-order的情况以及missing nonce
 	pool.currentState.SetNonce(addr, n-1)
 	pool.lockedReset(nil, nil)
 	if fn := pool.pendingState.GetNonce(addr); fn != n-1 {
@@ -458,6 +461,7 @@ func TestTransactionNonceRecovery(t *testing.T) {
 
 // Tests that if an account runs out of funds, any pending and queued transactions
 // are dropped.
+// 如果一个account用尽了funds，则任何pending以及queued的transactions都会被丢弃
 func TestTransactionDropping(t *testing.T) {
 	t.Parallel()
 
@@ -505,6 +509,7 @@ func TestTransactionDropping(t *testing.T) {
 		t.Errorf("total transaction mismatch: have %d, want %d", pool.all.Count(), 6)
 	}
 	// Reduce the balance of the account, and check that invalidated transactions are dropped
+	// 降低account的balance，并且检查不合法的transactions会被丢弃
 	pool.currentState.AddBalance(account, big.NewInt(-650))
 	pool.lockedReset(nil, nil)
 
@@ -530,6 +535,7 @@ func TestTransactionDropping(t *testing.T) {
 		t.Errorf("total transaction mismatch: have %d, want %d", pool.all.Count(), 4)
 	}
 	// Reduce the block gas limit, check that invalidated transactions are dropped
+	// 降低block的gas limit，检查不合法的transactions都会被丢弃
 	pool.chain.(*testBlockChain).gasLimit = 100
 	pool.lockedReset(nil, nil)
 
@@ -553,6 +559,8 @@ func TestTransactionDropping(t *testing.T) {
 // Tests that if a transaction is dropped from the current pending pool (e.g. out
 // of fund), all consecutive (still valid, but not executable) transactions are
 // postponed back into the future queue to prevent broadcasting them.
+// 如果一个transaction从当前的pending pool中丢弃（out of fund），所有连续的transactions
+// (依旧合法，但是不能执行)会被移动到future queue中从而防止广播它们
 func TestTransactionPostponing(t *testing.T) {
 	t.Parallel()
 
@@ -667,6 +675,8 @@ func TestTransactionPostponing(t *testing.T) {
 // Tests that if the transaction pool has both executable and non-executable
 // transactions from an origin account, filling the nonce gap moves all queued
 // ones into the pending pool.
+// 如果transaction pool中同时有来自于同一个account的executable和non-executable transaction
+// 填充中间的nonce gap，移动所有的queued transaction到pending pool
 func TestTransactionGapFilling(t *testing.T) {
 	t.Parallel()
 
@@ -678,6 +688,7 @@ func TestTransactionGapFilling(t *testing.T) {
 	pool.currentState.AddBalance(account, big.NewInt(1000000))
 
 	// Keep track of transaction events to ensure all executables get announced
+	// 保持追踪transaction events从而确保所有的executables都能接收到
 	events := make(chan NewTxsEvent, testTxPoolConfig.AccountQueue+5)
 	sub := pool.txFeed.Subscribe(events)
 	defer sub.Unsubscribe()
@@ -723,6 +734,8 @@ func TestTransactionGapFilling(t *testing.T) {
 
 // Tests that if the transaction count belonging to a single account goes above
 // some threshold, the higher transactions are dropped to prevent DOS attacks.
+// 如果单个account的transaction数目超过了某个阈值，则更高的transactions会被丢弃，从而防止
+// DOS攻击
 func TestTransactionQueueAccountLimiting(t *testing.T) {
 	t.Parallel()
 

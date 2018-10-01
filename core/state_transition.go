@@ -91,6 +91,7 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 		gas = params.TxGas
 	}
 	// Bump the required gas by the amount of transactional data
+	// 计算transactional data所需的gas
 	if len(data) > 0 {
 		// Zero and non-zero bytes are priced differently
 		var nz uint64

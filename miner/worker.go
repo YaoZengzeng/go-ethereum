@@ -54,6 +54,7 @@ const (
 // Agent can register themselves with the worker
 // Agent是真正进行挖矿的对象
 type Agent interface {
+	// 可以通过AssignTask将任务分发给agent
 	AssignTask(*Package)
 	DeliverTo(chan<- *Package)
 	Start()
@@ -99,6 +100,7 @@ type worker struct {
 
 	// update loop
 	mux          *event.TypeMux
+	// 从txsCh中获取新的transactions
 	txsCh        chan core.NewTxsEvent
 	txsSub       event.Subscription
 	chainHeadCh  chan core.ChainHeadEvent
@@ -109,6 +111,7 @@ type worker struct {
 	// 所有的agent
 	agents map[Agent]struct{}
 	// 从recv中获取Package
+	// Package中包含Receipts, State以及Block
 	recv   chan *Package
 
 	eth     Backend
@@ -124,15 +127,18 @@ type worker struct {
 	current   *Env
 
 	snapshotMu    sync.RWMutex
+	// snapshotBlock和snapshotState就是在做snapshot时最新的block的state db的状态
 	snapshotBlock *types.Block
 	snapshotState *state.StateDB
 
 	uncleMu        sync.Mutex
 	possibleUncles map[common.Hash]*types.Block
 
+	// unconfirmed包含一系列本地挖取的blocks等待canonicalness confirmations
 	unconfirmed *unconfirmedBlocks // set of locally mined blocks pending canonicalness confirmations
 
 	// atomic status counters
+	// running表示共识引擎是否启动
 	running int32 // The indicator whether the consensus engine is running or not.
 }
 
@@ -224,6 +230,7 @@ func (self *worker) register(agent Agent) {
 	defer self.mu.Unlock()
 	// 将agent加入worker中
 	self.agents[agent] = struct{}{}
+	// agent会将mining的结果打包发送给self.recv
 	agent.DeliverTo(self.recv)
 	if self.isRunning() {
 		agent.Start()
@@ -237,6 +244,7 @@ func (self *worker) unregister(agent Agent) {
 	agent.Stop()
 }
 
+// update函数主要用来根据新获取到的transactions，chain head等等来更新self的状态
 func (self *worker) update() {
 	defer self.txsSub.Unsubscribe()
 	defer self.chainHeadSub.Unsubscribe()
@@ -279,7 +287,7 @@ func (self *worker) update() {
 				self.currentMu.Unlock()
 			} else {
 				// If we're mining, but nothing is being processed, wake on new transactions
-				// 如果我们正在mining并且没有
+				// 如果我们正在mining，但是没有正在被处理，当有新的transaction来的时候wake up
 				if self.config.Clique != nil && self.config.Clique.Period == 0 {
 					self.commitNewWork()
 				}
@@ -298,6 +306,7 @@ func (self *worker) update() {
 
 func (self *worker) wait() {
 	for {
+		// mining结束之后会将结果打包发送给recv
 		for result := range self.recv {
 
 			if result == nil {
@@ -307,6 +316,8 @@ func (self *worker) wait() {
 
 			// Update the block hash in all logs since it is now available and not when the
 			// receipt/log of individual transactions were created.
+			// 更新所有logs里面的block hash，因为现在它现在才可以访问而不是在单个transactions的receipt/log
+			// 创建的时候
 			for _, r := range result.Receipts {
 				for _, l := range r.Logs {
 					l.BlockHash = block.Hash()
@@ -316,6 +327,7 @@ func (self *worker) wait() {
 				log.BlockHash = block.Hash()
 			}
 			self.currentMu.Lock()
+			// 将block写入chain中
 			stat, err := self.chain.WriteBlockWithState(block, result.Receipts, result.State)
 			self.currentMu.Unlock()
 			if err != nil {
@@ -346,6 +358,7 @@ func (self *worker) wait() {
 // push将一个新的work task传输给当前的live miner agents
 func (self *worker) push(p *Package) {
 	for agent := range self.agents {
+		// 将新的task交给各个agent
 		agent.AssignTask(p)
 	}
 }
@@ -455,6 +468,7 @@ func (self *worker) commitNewWork() {
 	}
 
 	// compute uncles for the new block.
+	// 为新的block计算uncle
 	var (
 		uncles    []*types.Header
 		badUncles []common.Hash
@@ -463,6 +477,7 @@ func (self *worker) commitNewWork() {
 		if len(uncles) == 2 {
 			break
 		}
+		// 将uncle加入env.uncles
 		if err := self.commitUncle(env, uncle.Header()); err != nil {
 			log.Trace("Bad uncle found and will be removed", "hash", hash)
 			log.Trace(fmt.Sprint(uncle))
@@ -549,12 +564,14 @@ func (self *worker) updateSnapshot() {
 	var uncles []*types.Header
 	self.current.uncles.Each(func(item interface{}) bool {
 		if header, ok := item.(*types.Header); ok {
+			// 遍历获取所有的uncles
 			uncles = append(uncles, header)
 			return true
 		}
 		return false
 	})
 
+	// 获取当前的block
 	self.snapshotBlock = types.NewBlock(
 		self.current.header,
 		self.current.txs,
@@ -573,6 +590,7 @@ func (env *Env) commitTransactions(mux *event.TypeMux, txs *types.TransactionsBy
 
 	for {
 		// If we don't have enough gas for any further transactions then we're done
+		// 如果我们没有足够的gas用于以后的transactions，则我们就结束了
 		if env.gasPool.Gas() < params.TxGas {
 			log.Trace("Not enough gas for further transactions", "have", env.gasPool, "want", params.TxGas)
 			break
@@ -652,10 +670,13 @@ func (env *Env) commitTransactions(mux *event.TypeMux, txs *types.TransactionsBy
 }
 
 func (env *Env) commitTransaction(tx *types.Transaction, bc *core.BlockChain, coinbase common.Address, gp *core.GasPool) (error, []*types.Log) {
+	// 在执行transaction前，获取state的snapshot
 	snap := env.state.Snapshot()
 
+	// 调用evm执行transaction
 	receipt, _, err := core.ApplyTransaction(env.config, bc, &coinbase, gp, env.state, env.header, tx, &env.header.GasUsed, vm.Config{})
 	if err != nil {
+		// 遇到错误，则回退到之前的snapshot
 		env.state.RevertToSnapshot(snap)
 		return err, nil
 	}

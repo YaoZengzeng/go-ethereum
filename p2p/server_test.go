@@ -86,6 +86,7 @@ func startTestServer(t *testing.T, id discover.NodeID, pf func(*Peer)) *Server {
 
 func TestServerListen(t *testing.T) {
 	// start the test server
+	// 启动test server
 	connected := make(chan *Peer)
 	remid := randomID()
 	srv := startTestServer(t, remid, func(p *Peer) {

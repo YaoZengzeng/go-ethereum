@@ -173,6 +173,7 @@ func (m *txSortedMap) Remove(nonce uint64) bool {
 // Ready retrieves a sequentially increasing list of transactions starting at the
 // provided nonce that is ready for processing. The returned transactions will be
 // removed from the list.
+// Ready获取从给定的nonce开始逐渐增长的list of transactions，返回的transactions会从list中移除
 //
 // Note, all transactions with nonces lower than start will also be returned to
 // prevent getting into and invalid state. This is not something that should ever
@@ -245,15 +246,19 @@ func newTxList(strict bool) *txList {
 
 // Overlaps returns whether the transaction specified has the same nonce as one
 // already contained within the list.
+// Overlaps返回指定的transaction是否和list中某个已有的transaction有着相同的nonce
 func (l *txList) Overlaps(tx *types.Transaction) bool {
 	return l.txs.Get(tx.Nonce()) != nil
 }
 
 // Add tries to insert a new transaction into the list, returning whether the
 // transaction was accepted, and if yes, any previous transaction it replaced.
+// Add试着将一个新的transaction加入list，返回transaction是否被接收，如果是，是否替换了任何之前
+// 的transaction
 //
 // If the new transaction is accepted into the list, the lists' cost and gas
 // thresholds are also potentially updated.
+// 如果新的transaction被list接收，list的cost以及gas thresholds都会被潜在地提高
 func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Transaction) {
 	// If there's an older better transaction, abort
 	old := l.txs.Get(tx.Nonce())
@@ -267,6 +272,7 @@ func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Tran
 		}
 	}
 	// Otherwise overwrite the old transaction with the current one
+	// 否则用当前的transaction覆写旧的transaction
 	l.txs.Put(tx)
 	if cost := tx.Cost(); l.costcap.Cmp(cost) < 0 {
 		l.costcap = cost
@@ -370,6 +376,8 @@ func (l *txList) Empty() bool {
 // Flatten creates a nonce-sorted slice of transactions based on the loosely
 // sorted internal representation. The result of the sorting is cached in case
 // it's requested again before any modifications are made to the contents.
+// Flatten创建一个基于nonce排序的transactions
+// 返回的结果会被缓存从而防止在做任何修改之前的再次请求
 func (l *txList) Flatten() types.Transactions {
 	return l.txs.Flatten()
 }
